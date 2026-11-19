@@ -28,3 +28,12 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
   dann zusätzlich den Kalender.
 - Das Panel lässt sich ein- und ausklappen, ohne dass geladene Termine,
   Filter oder Auswahl verloren gehen.
+- Ausgewählte Termine löschen: Vorschau mit Anzahl, Titel, Datum und
+  Kalender; Standard ist ein Trockenlauf, echtes Löschen erst nach Eintippen
+  der Anzahl. Mit Fortschrittsanzeige, Abbrechen und Zusammenfassung.
+- Vorkommen aus Terminserien werden beim Löschen übersprungen; ganze Serien
+  werden nur nach ausdrücklicher Wahl gelöscht.
+- Protokoll aller Löschungen (auch Trockenläufe) mit Export als CSV und JSON.
+- „Rückgängig machen“: In der laufenden Sitzung gelöschte Termine lassen sich
+  neu anlegen (ohne Raumbuchungen, Dienstplan-Events, Einladungen,
+  Anmeldegruppen und Bilder).

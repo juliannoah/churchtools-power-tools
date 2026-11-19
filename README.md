@@ -4,11 +4,10 @@ Ein Userscript für [Tampermonkey](https://www.tampermonkey.net/) und
 [Violentmonkey](https://violentmonkey.github.io/), das die Verwaltung in
 ChurchTools vereinfacht.
 
-> **Stand:** in Entwicklung. Bisher kann das Skript die Termine eines
-> Kalenders für einen Zeitraum als Tabelle anzeigen, filtern und auswählen
-> (nur lesen). Die erste
-> eigentliche Funktion – mehrere Termine eines Kalenders auf einmal auswählen
-> und löschen – folgt. Es gibt noch kein Release.
+> **Stand:** in Entwicklung, noch kein Release. Das Skript kann die Termine
+> eines oder aller Kalender für einen Zeitraum anzeigen, filtern, auswählen
+> und nach Vorschau und Bestätigung löschen. Einzelne Vorkommen einer
+> Terminserie lassen sich noch nicht löschen.
 
 ## Wichtig zu wissen
 
@@ -19,7 +18,15 @@ ChurchTools vereinfacht.
   ChurchTools-Instanz, auf der es läuft. Es werden keine Daten an andere
   Dienste gesendet.
 - **Trockenlauf:** Löschfunktionen zeigen standardmäßig nur an, was gelöscht
-  *würde*. Echtes Löschen braucht eine ausdrückliche Bestätigung.
+  *würde*. Echtes Löschen braucht eine ausdrückliche Bestätigung, bei der du
+  die Anzahl eintippst.
+- **Terminserien:** Wird eine Serie gelöscht, dann immer als Ganzes – und
+  nur, wenn du das ausdrücklich auswählst.
+- **Protokoll und Rückgängig:** Jede Löschung wird protokolliert (Export als
+  CSV/JSON). Solange die Seite nicht neu geladen wird, lassen sich gelöschte
+  Termine neu anlegen – allerdings ohne Raumbuchungen, Dienstplan-Events,
+  Einladungen, Anmeldegruppen und Bilder. ChurchTools selbst kennt keinen
+  Papierkorb für Termine; lösche also trotzdem mit Bedacht.
 
 ## Entwicklung
 

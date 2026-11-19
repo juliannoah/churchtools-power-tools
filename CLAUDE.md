@@ -54,13 +54,20 @@ src/
     module.ts           Vertrag für Module (PowerToolsModule: id, title, View)
     route.ts            Route der SPA + Benachrichtigung bei Navigationswechsel
     api-client.ts       fetch-Wrapper: Session, CSRF, Fehler (ApiError), Retry, Throttling
-    logger.ts           (Phase 3) Protokoll der Aktionen, exportierbar
+    logger.ts           Protokoll der Aktionen (im Arbeitsspeicher), Export als CSV/JSON
     ui/                 gemeinsame UI-Bausteine (mount, App/Panel, später Tabelle, Dialoge)
   api/                  whoami.ts, calendars.ts, appointments.ts, types.ts
   features/
     hello/              Reiter „Start“: Instanz, angemeldete Person, Route
-    bulk-delete-appointments/   Reiter „Termine“: index.tsx, view.tsx, logic.ts
-                                (Phase 1 nur lesen; Auswahl/Löschen in Phase 2/3)
+    bulk-delete-appointments/   Reiter „Termine“
+      index.tsx         Modul, hält Protokoll und Liste gelöschter Termine der Sitzung
+      view.tsx          Kalender/Zeitraum, Tabelle, Filter, Auswahl
+      logic.ts          Zeilen, Filter, Auswahl, Datumsformat (ohne DOM)
+      deletion.ts       Löschplan aus der Auswahl, Ablauf des Löschens (ohne DOM)
+      delete-view.tsx   Vorschau → Fortschritt → Zusammenfassung
+      snapshot.ts       Termindaten zum Neuanlegen festhalten
+      restore.ts        Wiederherstellen (Neuanlegen) gelöschter Termine (ohne DOM)
+      restore-view.tsx  Oberfläche zum Wiederherstellen
 docs/
   openapi.json          OpenAPI-Spezifikation der Instanz (nicht eingecheckt, Bezug: docs/README.md)
 ```
@@ -130,7 +137,7 @@ docs/
 | 0 | Setup, Hello-World-Panel, CLAUDE.md | fertig, auf der Instanz getestet (2026-11-19) |
 | 1 | Nur lesen: API-Client, whoami, Kalender, Termine als Tabelle | gebaut; Termine laden auf der Instanz funktioniert (2026-11-19), Uhrzeiten und ganztägige Termine bestätigt, Serien-Markierung an einer wöchentlichen Testserie bestätigt |
 | 2 | Auswahl: Filter, Checkboxen, Serien markiert | fertig, auf der Instanz getestet (2026-11-19) |
-| 3 | Löschen gemäß Sicherheitsregeln, Protokoll, Export | offen |
+| 3 | Löschen gemäß Sicherheitsregeln, Protokoll, Export, Rückgängig | gebaut (Einzeltermine und ganze Serien), Test auf der Instanz durch Julian offen; einzelne Serien-Vorkommen folgen als eigener Schritt |
 | 4 | GitHub Action, Release v0.1.0, README fertig | offen |
 
 ## Entscheidungen
@@ -142,6 +149,11 @@ docs/
 | 2026-11-19 | Der Instanzname steht nicht im Repo (öffentlich, läuft auf jeder Instanz). |
 | 2026-11-19 | Lizenz **MIT**, Copyright-Vermerk mit dem GitHub-Handle `juliannoah` (kein Klarname). |
 | 2026-11-19 | Termine werden pro Kalender (`/calendars/{calendarId}/appointments`) oder über **alle Kalender** (`/calendars/appointments?calendar_ids[]=…`) geladen; Zeitraum höchstens 366 Tage, Vorbelegung heute + 90 Tage. Jede Zeile kennt ihre `calendarId` (für das Löschen nötig). |
+| 2026-11-19 | Löschen: `DELETE /calendars/{calendarId}/appointments/{appointmentId}` löscht bei Serien immer die **ganze Serie**. Einzelne Vorkommen gingen nur über `PUT` der kompletten Serie mit Ausnahme-Datum; das ist bewusst noch nicht gebaut. Ausgewählte Serien-Vorkommen werden übersprungen, außer der Nutzer wählt ausdrücklich „ganze Serie löschen“. Die einzutippende Anzahl ist die Zahl der Löschaufträge (eine Serie = 1). |
+| 2026-11-19 | Abbrechen wirkt **zwischen** zwei Löschungen; eine laufende Anfrage wird nicht abgebrochen, damit ihr Ergebnis eindeutig bleibt. Nach 401 wird nicht weiter versucht. |
+| 2026-11-19 | **Rückgängig** = Neuanlegen per `POST /calendars/{calendarId}/appointments` aus Daten, die beim Laden gemerkt wurden (Titel, Texte, Zeiten, Wiederholung, Ausnahmen, Ort, Link, Tags). Neue ID. Nicht wiederherstellbar: Ressourcenbuchungen, Events der Dienstplanung, Einladungen, Anmeldegruppen, Bild. Nur innerhalb der Sitzung (Arbeitsspeicher); der JSON-Export des Protokolls enthält dieselben Daten. |
+| 2026-11-19 | Protokoll und Liste der gelöschten Termine liegen nur im Arbeitsspeicher (kein localStorage), Exporte heißen `ct-power-tools-protokoll-…` (Muster steht in `.gitignore`). |
+| 2026-11-19 | Reiter bleiben nach dem ersten Öffnen eingehängt (wie das Panel), damit ein laufender Löschvorgang beim Reiterwechsel nicht verschwindet. |
 | 2026-11-19 | Das Panel wird **ein-/ausgeklappt statt geschlossen**: Es bleibt nach dem ersten Öffnen im DOM (`hidden`), damit geladene Termine, Filter und Auswahl erhalten bleiben. |
 | 2026-11-19 | Uhrzeiten werden in der Zeitzone des Browsers angezeigt (Annahme: entspricht der Zeitzone der Installation). |
 
@@ -152,8 +164,14 @@ docs/
   `/calendars`, `/calendars/{calendarId}/appointments`).
 - CSRF: Der Header-Name `csrf-token` steht **nicht** in der
   OpenAPI-Spezifikation (nur `GET /csrftoken`). Der API-Client setzt ihn bei
-  schreibenden Requests; vor Phase 3 an einem echten Request von ChurchTools
-  (DevTools, Netzwerk-Reiter) prüfen.
+  schreibenden Requests; ob das stimmt, zeigt der erste echte Löschtest
+  (alternativ in den DevTools an einem Request von ChurchTools ablesen).
+- Einzelne Vorkommen einer Serie löschen: vorher an einer Testserie mit Ort
+  und Raumbuchung prüfen, was `PUT` mit nicht mitgeschickten Feldern macht.
+- Wiederherstellen ist noch nicht auf der Instanz geprüft (u. a. ob
+  `onBehalfOfPid` und Tags beim Anlegen angenommen werden).
+- Wiederherstellen nach dem Neuladen der Seite (Import des JSON-Protokolls)
+  gibt es noch nicht.
 - Das Format von Fehlerantworten (JSON mit `message`?) ist in der
   Spezifikation nicht festgelegt; der Client liest es defensiv.
 - Navigationswechsel über `history.pushState` (ohne Hash) werden bisher nicht
