@@ -165,7 +165,7 @@ Stufen:
 |---|---|---|
 | A | Nur lesen: offene Followups, Person, mögliche Dubletten (gleiche E-Mail oder exakt gleicher Vor- und Nachname), Filter nach Personenstatus, Einzelprüfung per Personen-ID | gebaut. Auf der Instanz bestätigt (2026-11-19): Followups, Personen und Gruppe werden geladen. Offen: Dublettenerkennung an einem echten Fall (über die Einzelprüfung), Statusfilter |
 | B | Bearbeiten: „Duplikat …“ / „Kein Duplikat …“ je Followup mit Vorschau der Schritte, Trockenlauf als Vorgabe, Protokoll nur mit IDs | gebaut (`actions.ts`, `action-view.tsx`). Auf der Instanz bisher nur Trockenläufe „Kein Duplikat“ (2026-11-19: mit vorgeschlagener Gruppe, mit gesuchter Gruppe und ohne Gruppe – Schritte stimmen) und ein echter Lauf „Kein Duplikat“ ohne Gruppe (Followup als erledigt markiert). **Noch nicht echt gelaufen:** Aufnahme in eine Gruppe und der gesamte Duplikat-Fall – diesen zuerst nur mit zwei Testpersonen |
-| C | Allgemeine Dublettensuche über alle sichtbaren Personen (Wunsch vom 2026-11-19): Personen seitenweise laden, lokal nach gleichem Namen bzw. gleicher E-Mail gruppieren; Alternative `GET /persons/duplicates` (Beta, Rechte ungeklärt). Aktionen wie in Stufe B. | Suche gebaut (Reiter „Dubletten“, nur lesen, eigene Gruppierung im Browser). Auf der Instanz gelaufen (2026-11-19): gut 1000 Personen, 5 Gruppen, ca. 8 Sekunden. Offen: ob alle erwarteten Personen dabei sind (Sichtbarkeit, Archiv); Aktionen folgen mit Stufe B |
+| C | Allgemeine Dublettensuche über alle sichtbaren Personen (Wunsch vom 2026-11-19): Personen seitenweise laden, lokal nach gleichem Namen bzw. gleicher E-Mail gruppieren; Alternative `GET /persons/duplicates` (Beta, Rechte ungeklärt). Aktionen wie in Stufe B. | Suche gebaut (Reiter „Dubletten“, nur lesen, eigene Gruppierung im Browser). Auf der Instanz gelaufen (2026-11-19): gut 1000 Personen, 5 Gruppen, ca. 8 Sekunden. Offen: ob alle erwarteten Personen dabei sind (Sichtbarkeit, Archiv). Seit 2026-11-19 zusätzlich: Name als Link zur Person (neuer Tab) und je Gruppe „Duplikat zusammenführen …“ – Hauptaccount wählen, übrige als dessen Duplikat eintragen, alle in die Gruppe für Duplikate (`duplicates/merge-view.tsx`, `buildMergeSteps`). Das Skript führt selbst **nichts** zusammen (kein `PATCH /persons/{id}/merge/…`); das macht die zuständige AG. Auf der Instanz noch nicht ausgeführt |
 
 So ist Stufe B umgesetzt:
 
@@ -183,6 +183,13 @@ So ist Stufe B umgesetzt:
 - „Kein Duplikat“: erst Aufnahme in die Gruppe (`only_add`), dann
   `complete` ohne Zielgruppe – so wird keine bestehende Mitgliedschaft
   überschrieben und das Followup bleibt offen, wenn die Aufnahme scheitert.
+
+- Gemeinsame Bausteine für mehrschrittige Personen-Aktionen liegen in
+  `followups/action-parts.tsx` (Ablauf, Vorschau, Beziehungstyp) und
+  `followups/actions.ts` (Schritte); der Reiter „Dubletten“ nutzt sie mit.
+- Link zur Person: `personUrl()` in `core/persons.ts` nutzt das Muster
+  `/?q=churchdb#PersonView/searchEntry:%23<ID>`. Das steht nicht in der
+  OpenAPI-Spezifikation und ist an der Instanz zu prüfen.
 
 Regeln für Stufe B:
 
@@ -270,6 +277,9 @@ Namens (eine davon selbstregistriert mit Followup):
   übersprungen (Verschieben und Notiz laufen erneut – bewusst).
 - „Kein Duplikat“ mit Gemeindegruppe und ohne Gruppe.
 - Rechte: Reichen sie für Beziehungen, Gruppenaufnahme und Followup-Aktionen?
+- Reiter „Dubletten“: Öffnet der Klick auf den Namen die richtige Person in
+  einem neuen Tab? „Duplikat zusammenführen …“ zuerst als Trockenlauf, echt
+  nur an einem Fall, der wirklich ein Duplikat ist.
 
 Stand 2026-11-19, nach Release v0.1.0. Nur im Testkalender testen. Erledigte
 Punkte hier streichen und das Ergebnis in der Phasen-Tabelle bzw. unter
