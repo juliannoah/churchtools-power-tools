@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { deleteAppointment } from '../../api/appointments';
 import { type ApiClient, ApiError, describeError } from '../../core/api-client';
-import { type Logger, exportFileName, toCsv, toJson } from '../../core/logger';
-import { downloadTextFile } from '../../core/ui/download';
+import type { Logger } from '../../core/logger';
+import { downloadLog } from '../../core/ui/download';
 import {
   type DeleteOutcome,
   buildDeletePlan,
@@ -112,14 +112,6 @@ export function DeleteFlow({ api, logger, trash, rows, selection, onClose }: Del
 
   if (step.name === 'done') {
     const summary = summarizeOutcomes(step.outcomes);
-    const exportLog = (extension: 'csv' | 'json'): void => {
-      const entries = logger.entries();
-      if (extension === 'csv') {
-        downloadTextFile(exportFileName('csv', new Date()), 'text/csv', toCsv(entries));
-      } else {
-        downloadTextFile(exportFileName('json', new Date()), 'application/json', toJson(entries));
-      }
-    };
     return (
       <section class="delete-flow">
         <h3>{step.dryRun ? 'Trockenlauf beendet' : 'Löschen beendet'}</h3>
@@ -177,10 +169,10 @@ export function DeleteFlow({ api, logger, trash, rows, selection, onClose }: Del
               Rückgängig machen …
             </button>
           )}
-          <button type="button" class="secondary" onClick={() => exportLog('csv')}>
+          <button type="button" class="secondary" onClick={() => downloadLog(logger, 'csv')}>
             Protokoll als CSV
           </button>
-          <button type="button" class="secondary" onClick={() => exportLog('json')}>
+          <button type="button" class="secondary" onClick={() => downloadLog(logger, 'json')}>
             Protokoll als JSON
           </button>
           <button

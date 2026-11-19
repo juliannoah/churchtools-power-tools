@@ -49,15 +49,29 @@ export interface LogEntry {
 export interface Logger {
   add(entry: LogEntry): void;
   entries(): readonly LogEntry[];
+  /**
+   * Meldet jeden neuen Eintrag.
+   *
+   * @returns Funktion zum Abmelden.
+   */
+  subscribe(listener: () => void): () => void;
 }
 
 export function createLogger(): Logger {
   const list: LogEntry[] = [];
+  const listeners = new Set<() => void>();
   return {
     add: (entry) => {
       list.push(entry);
+      for (const listener of listeners) listener();
     },
     entries: () => list,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
   };
 }
 

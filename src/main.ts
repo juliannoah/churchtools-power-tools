@@ -3,6 +3,7 @@ import type { PowerToolsModule } from './core/module';
 import { onRouteChange } from './core/route';
 import { mountApp } from './core/ui/mount';
 import { createApiClient } from './core/api-client';
+import { createLogger } from './core/logger';
 import { createAppointmentsModule } from './features/bulk-delete-appointments';
 import { createHelloModule } from './features/hello';
 
@@ -10,9 +11,16 @@ import { createHelloModule } from './features/hello';
 // CSRF-Token zentral bleiben.
 const api = createApiClient();
 
+// Ein Protokoll für die ganze Sitzung: Module schreiben hinein, die
+// Startseite bietet es zum Herunterladen an.
+const logger = createLogger();
+
 // Hier werden alle Module registriert. Neue Features kommen als eigener
 // Ordner unter src/features/ dazu und werden in diese Liste eingetragen.
-const modules: PowerToolsModule[] = [createHelloModule(api), createAppointmentsModule(api)];
+const modules: PowerToolsModule[] = [
+  createHelloModule(api, logger),
+  createAppointmentsModule(api, logger),
+];
 
 const app = mountApp({ version: __APP_VERSION__, modules });
 

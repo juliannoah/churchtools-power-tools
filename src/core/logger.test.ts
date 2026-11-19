@@ -25,6 +25,18 @@ describe('Protokoll', () => {
     expect(logger.entries().map((e) => e.appointmentId)).toEqual([10, 11]);
   });
 
+  it('meldet neue Einträge, bis man sich abmeldet', () => {
+    const logger = createLogger();
+    let calls = 0;
+    const unsubscribe = logger.subscribe(() => calls++);
+
+    logger.add(entry);
+    unsubscribe();
+    logger.add(entry);
+
+    expect(calls).toBe(1);
+  });
+
   it('exportiert CSV mit Kopfzeile, BOM und maskierten Sonderzeichen', () => {
     const [header, line, rest] = toCsv([entry]).split('\r\n');
 

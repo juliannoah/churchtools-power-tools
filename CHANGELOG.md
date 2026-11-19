@@ -34,6 +34,8 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Vorkommen aus Terminserien werden beim Löschen übersprungen; ganze Serien
   werden nur nach ausdrücklicher Wahl gelöscht.
 - Protokoll aller Löschungen (auch Trockenläufe) mit Export als CSV und JSON.
+- Das Protokoll der Sitzung lässt sich jederzeit im Reiter „Start“ als CSV
+  oder JSON herunterladen.
 - „Rückgängig machen“: In der laufenden Sitzung gelöschte Termine lassen sich
   neu anlegen (ohne Raumbuchungen, Dienstplan-Events, Einladungen,
   Anmeldegruppen und Bilder).

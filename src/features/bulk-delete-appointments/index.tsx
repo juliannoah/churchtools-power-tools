@@ -1,5 +1,5 @@
 import type { ApiClient } from '../../core/api-client';
-import { createLogger } from '../../core/logger';
+import type { Logger } from '../../core/logger';
 import type { PowerToolsModule } from '../../core/module';
 import { createTrash } from './restore';
 import { AppointmentsView } from './view';
@@ -9,9 +9,7 @@ import { AppointmentsView } from './view';
  * auswählen, gemäß den Sicherheitsregeln löschen und Löschungen der Sitzung
  * rückgängig machen.
  */
-export function createAppointmentsModule(api: ApiClient): PowerToolsModule {
-  // Ein Protokoll für die ganze Sitzung, damit der Export alle Läufe enthält.
-  const logger = createLogger();
+export function createAppointmentsModule(api: ApiClient, logger: Logger): PowerToolsModule {
   // In dieser Sitzung gelöschte Termine, für „Rückgängig machen“.
   const trash = createTrash();
   return {

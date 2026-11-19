@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'preact/hooks';
 import { getCurrentUser } from '../../api/whoami';
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
+import type { Logger } from '../../core/logger';
 import type { PowerToolsModule } from '../../core/module';
+import { downloadLog } from '../../core/ui/download';
 import { currentRoute, onRouteChange } from '../../core/route';
 
 /**
- * Startseite: zeigt, dass das Skript läuft, auf welcher Instanz, als wer man
- * angemeldet ist und dass Navigationswechsel erkannt werden.
+ * Startseite: zeigt, dass das Skript läuft, auf welcher Instanz und als wer
+ * man angemeldet ist, und bietet das Protokoll der Sitzung zum Download an.
  */
-function HelloView({ api }: { api: ApiClient }) {
+function HelloView({ api, logger }: { api: ApiClient; logger: Logger }) {
+  // Die Startseite bleibt eingehängt; bei neuen Einträgen neu zeichnen.
+  const [logCount, setLogCount] = useState(logger.entries().length);
+  useEffect(() => logger.subscribe(() => setLogCount(logger.entries().length)), [logger]);
+
   const [route, setRoute] = useState(currentRoute());
   useEffect(() => onRouteChange(setRoute), []);
 
@@ -41,14 +47,40 @@ function HelloView({ api }: { api: ApiClient }) {
         <dt>Aktuelle Route</dt>
         <dd>{route}</dd>
       </dl>
+
+      <h2 class="section">Protokoll dieser Sitzung</h2>
+      <p>
+        {logCount === 0
+          ? 'Noch keine Einträge. Protokolliert werden Löschungen, Trockenläufe und das Wiederherstellen.'
+          : `${logCount} ${logCount === 1 ? 'Eintrag' : 'Einträge'} seit dem Laden der Seite.`}{' '}
+        Das Protokoll geht beim Neuladen der Seite verloren.
+      </p>
+      <div class="actions start">
+        <button
+          type="button"
+          class="secondary"
+          disabled={logCount === 0}
+          onClick={() => downloadLog(logger, 'csv')}
+        >
+          Protokoll als CSV
+        </button>
+        <button
+          type="button"
+          class="secondary"
+          disabled={logCount === 0}
+          onClick={() => downloadLog(logger, 'json')}
+        >
+          Protokoll als JSON
+        </button>
+      </div>
     </>
   );
 }
 
-export function createHelloModule(api: ApiClient): PowerToolsModule {
+export function createHelloModule(api: ApiClient, logger: Logger): PowerToolsModule {
   return {
     id: 'hello',
     title: 'Start',
-    View: () => <HelloView api={api} />,
+    View: () => <HelloView api={api} logger={logger} />,
   };
 }
