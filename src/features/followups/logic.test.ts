@@ -93,7 +93,10 @@ describe('Followup-Zeilen', () => {
       followUp({ id: 2, personId: 901, groupId: 8, title: 'Anruf' }),
       followUp({ id: 3, personId: 902 }),
     ],
-    [newPerson, { id: 901, firstName: 'Max', lastName: 'Muster' }],
+    [
+      { ...newPerson, statusId: 4 },
+      { id: 901, firstName: 'Max', lastName: 'Muster', statusId: 2 },
+    ],
     [{ id: 7, name: 'Testgruppe' }],
   );
 
@@ -105,11 +108,20 @@ describe('Followup-Zeilen', () => {
     ]);
   });
 
+  const ids = (text: string, statusId: number | null = null) =>
+    filterFollowUpRows(rows, { text, statusId }).map((row) => row.followUp.id);
+
   it('filtert nach Titel, Gruppe oder Name', () => {
-    expect(filterFollowUpRows(rows, 'anruf').map((row) => row.followUp.id)).toEqual([2]);
-    expect(filterFollowUpRows(rows, 'testgruppe').map((row) => row.followUp.id)).toEqual([1]);
-    expect(filterFollowUpRows(rows, 'max muster').map((row) => row.followUp.id)).toEqual([2]);
-    expect(filterFollowUpRows(rows, ' ')).toHaveLength(3);
+    expect(ids('anruf')).toEqual([2]);
+    expect(ids('testgruppe')).toEqual([1]);
+    expect(ids('max muster')).toEqual([2]);
+    expect(ids(' ')).toEqual([1, 2, 3]);
+  });
+
+  it('filtert nach Personenstatus; nicht sichtbare Personen fallen dann heraus', () => {
+    expect(ids('', 4)).toEqual([1]);
+    expect(ids('anruf', 4)).toEqual([]);
+    expect(ids('', 99)).toEqual([]);
   });
 });
 

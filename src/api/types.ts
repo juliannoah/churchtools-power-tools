@@ -161,7 +161,17 @@ export interface Person {
   birthday?: string | null;
   city?: string;
   isArchived?: boolean;
+  /** Personenstatus, siehe GET /statuses. */
+  statusId?: number;
   meta?: { createdDate?: string };
+}
+
+/** GET /statuses – Personenstatus der Instanz (z. B. Mitglied, selbstregistriert). */
+export interface PersonStatus {
+  id: number;
+  nameTranslated: string;
+  /** Kürzel; vorhanden, auch wenn kein eigenes Kürzel gepflegt ist. */
+  shortyTranslated: string;
 }
 
 /** GET /groups – nur die Felder, die das Skript nutzt. */

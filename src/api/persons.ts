@@ -1,5 +1,5 @@
 import type { ApiClient, Query } from '../core/api-client';
-import type { ApiPagedList, Person } from './types';
+import type { ApiList, ApiPagedList, Person, PersonStatus } from './types';
 
 const CHUNK = 100;
 
@@ -15,6 +15,15 @@ export async function getPersonsByIds(
     persons.push(...(await findPersons(api, { 'ids[]': chunk }, signal)));
   }
   return persons;
+}
+
+/** Alle Personenstatus der Instanz, nach Sortierung von ChurchTools. */
+export async function listPersonStatuses(
+  api: ApiClient,
+  signal?: AbortSignal,
+): Promise<PersonStatus[]> {
+  const result = await api.get<ApiList<PersonStatus>>('/statuses', { signal });
+  return result.data;
 }
 
 /** Personen mit genau dieser E-Mail-Adresse. */

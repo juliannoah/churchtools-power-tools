@@ -89,13 +89,25 @@ export function toFollowUpRows(
   }));
 }
 
-/** Filtert nach Text in Followup-Titel, Gruppe oder Name der Person. */
-export function filterFollowUpRows(rows: readonly FollowUpRow[], text: string): FollowUpRow[] {
-  const needle = normalize(text);
-  if (needle === '') return [...rows];
-  return rows.filter((row) =>
-    normalize(`${row.followUp.title} ${row.groupName} ${personName(row.person)}`).includes(needle),
-  );
+export interface FollowUpFilter {
+  /** Text in Followup-Titel, Gruppe oder Name der Person; leer = alle. */
+  text: string;
+  /** Nur Personen mit diesem Status (z. B. „selbstregistriert“); null = alle. */
+  statusId: number | null;
+}
+
+export function filterFollowUpRows(
+  rows: readonly FollowUpRow[],
+  filter: FollowUpFilter,
+): FollowUpRow[] {
+  const needle = normalize(filter.text);
+  return rows.filter((row) => {
+    if (filter.statusId !== null && row.person?.statusId !== filter.statusId) return false;
+    if (needle === '') return true;
+    return normalize(
+      `${row.followUp.title} ${row.groupName} ${personName(row.person)}`,
+    ).includes(needle);
+  });
 }
 
 export function personName(person: Person | undefined): string {

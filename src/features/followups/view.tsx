@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { listOpenFollowUps } from '../../api/followups';
 import { getGroupsByIds } from '../../api/groups';
-import { findPersonsByEmail, findPersonsByName, getPersonsByIds } from '../../api/persons';
-import type { Person } from '../../api/types';
+import {
+  findPersonsByEmail,
+  findPersonsByName,
+  getPersonsByIds,
+  listPersonStatuses,
+} from '../../api/persons';
+import type { Person, PersonStatus } from '../../api/types';
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
 import {
   type DuplicateCandidate,
+  type FollowUpFilter,
   type FollowUpRow,
   MATCH_REASON_LABEL,
   emailsOf,
@@ -20,13 +26,38 @@ type State =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; rows: FollowUpRow[] };
+  | { status: 'ready'; rows: FollowUpRow[]; statuses: PersonStatus[] };
 
 /** Ergebnis der Dublettensuche je Person-ID. */
 type CandidateResult = { candidates: DuplicateCandidate[] } | { error: string };
 
 /** Höchstens so viele E-Mail-Adressen einer Person werden abgefragt. */
 const MAX_EMAILS = 3;
+
+/**
+ * Der zuletzt gewählte Personenstatus wird im Browser gemerkt (reine
+ * Bequemlichkeit, nur die ID). Welcher Status „selbstregistriert“ bedeutet,
+ * ist je Instanz verschieden und deshalb nicht fest eingebaut.
+ */
+const STATUS_FILTER_KEY = 'ct-power-tools:followups:status-filter';
+
+function readStatusFilter(): number | null {
+  try {
+    const stored = Number(window.localStorage.getItem(STATUS_FILTER_KEY));
+    return Number.isInteger(stored) && stored > 0 ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeStatusFilter(statusId: number | null): void {
+  try {
+    if (statusId === null) window.localStorage.removeItem(STATUS_FILTER_KEY);
+    else window.localStorage.setItem(STATUS_FILTER_KEY, String(statusId));
+  } catch {
+    // Ohne Speicher gilt die Wahl eben nur bis zum Neuladen.
+  }
+}
 
 /**
  * Offene Followups mit der betroffenen Person und möglichen Dubletten. Nur
@@ -36,6 +67,7 @@ export function FollowUpsView({ api }: { api: ApiClient }) {
   const [state, setState] = useState<State>({ status: 'idle' });
   const [candidates, setCandidates] = useState<ReadonlyMap<number, CandidateResult>>(new Map());
   const [filter, setFilter] = useState('');
+  const [statusId, setStatusId] = useState<number | null>(readStatusFilter);
   const pending = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
 
@@ -60,8 +92,16 @@ export function FollowUpsView({ api }: { api: ApiClient }) {
           if (isAbortError(error)) throw error;
           return [];
         });
+        const statuses = await listPersonStatuses(api, signal).catch((error: unknown) => {
+          if (isAbortError(error)) throw error;
+          return [];
+        });
         if (signal.aborted) return;
-        setState({ status: 'ready', rows: toFollowUpRows(followUps, persons, groups) });
+        setState({
+          status: 'ready',
+          rows: toFollowUpRows(followUps, persons, groups),
+          statuses,
+        });
 
         // Dubletten nacheinander suchen und jeweils sofort anzeigen.
         for (const person of persons) {
@@ -81,7 +121,8 @@ export function FollowUpsView({ api }: { api: ApiClient }) {
       <h2>Followups</h2>
       <p class="muted">
         Zeigt deine offenen Followups, die betroffene Person und mögliche Dubletten (gleiche
-        E-Mail oder gleicher Vor- und Nachname). Bisher nur Anzeige – es wird nichts geändert.
+        E-Mail oder gleicher Vor- und Nachname). Über „Personenstatus“ lässt sich die Liste z. B.
+        auf selbstregistrierte Personen eingrenzen. Bisher nur Anzeige – es wird nichts geändert.
       </p>
       <div class="toolbar">
         <button
@@ -92,6 +133,27 @@ export function FollowUpsView({ api }: { api: ApiClient }) {
         >
           {state.status === 'ready' ? 'Neu laden' : 'Followups laden'}
         </button>
+        {state.status === 'ready' && state.statuses.length > 0 && (
+          <label>
+            Personenstatus
+            <select
+              value={statusId ?? ''}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                const next = value === '' ? null : Number(value);
+                setStatusId(next);
+                storeStatusFilter(next);
+              }}
+            >
+              <option value="">Alle</option>
+              {state.statuses.map((status) => (
+                <option key={status.id} value={status.id}>
+                  {statusLabel(status)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {state.status === 'ready' && state.rows.length > 0 && (
           <label>
             Filter
@@ -104,7 +166,8 @@ export function FollowUpsView({ api }: { api: ApiClient }) {
           </label>
         )}
       </div>
-      <Result state={state} filter={filter} candidates={candidates} />
+      <Result state={state} filter={{ text: filter, statusId }} candidates={candidates} />
+      <PersonCheck api={api} statuses={state.status === 'ready' ? state.statuses : []} />
     </>
   );
 }
@@ -137,7 +200,7 @@ function Result({
   candidates,
 }: {
   state: State;
-  filter: string;
+  filter: FollowUpFilter;
   candidates: ReadonlyMap<number, CandidateResult>;
 }) {
   if (state.status === 'idle') return null;
@@ -152,6 +215,7 @@ function Result({
   if (state.rows.length === 0) return <p class="notice">Keine offenen Followups.</p>;
 
   const visible = filterFollowUpRows(state.rows, filter);
+  const statusById = new Map(state.statuses.map((status) => [status.id, status]));
   const checked = state.rows.filter((row) => row.person && candidates.has(row.person.id)).length;
   const checkable = state.rows.filter((row) => row.person).length;
   return (
@@ -185,13 +249,15 @@ function Result({
                 </td>
                 <td>
                   {row.person ? (
-                    <PersonInfo person={row.person} />
+                    <PersonInfo person={row.person} statuses={statusById} />
                   ) : (
                     <span class="muted">nicht sichtbar (ID {row.followUp.personId})</span>
                   )}
                 </td>
                 <td>
-                  {row.person && <Candidates result={candidates.get(row.person.id)} />}
+                  {row.person && (
+                    <Candidates result={candidates.get(row.person.id)} statuses={statusById} />
+                  )}
                 </td>
               </tr>
             ))}
@@ -202,8 +268,126 @@ function Result({
   );
 }
 
-function PersonInfo({ person }: { person: Person }) {
+type CheckState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready'; person: Person; result: CandidateResult };
+
+/**
+ * Dublettensuche für eine beliebige Person per ID – unabhängig von den
+ * Followups, z. B. um einen bekannten Fall nachzuprüfen. Nur lesen.
+ */
+function PersonCheck({ api, statuses }: { api: ApiClient; statuses: PersonStatus[] }) {
+  const [input, setInput] = useState('');
+  const [state, setState] = useState<CheckState>({ status: 'idle' });
+  const pending = useRef<AbortController | null>(null);
+  useEffect(() => () => pending.current?.abort(), []);
+
+  const personId = /^\d+$/.test(input.trim()) ? Number(input.trim()) : null;
+  const statusById = new Map(statuses.map((status) => [status.id, status]));
+
+  const check = (): void => {
+    if (personId === null) return;
+    pending.current?.abort();
+    const controller = new AbortController();
+    const { signal } = controller;
+    pending.current = controller;
+    setState({ status: 'loading' });
+    void (async () => {
+      try {
+        const [person] = await getPersonsByIds(api, [personId], signal);
+        if (signal.aborted) return;
+        if (!person) {
+          setState({
+            status: 'error',
+            message: `Keine Person mit der ID ${personId} gefunden (oder für dich nicht sichtbar).`,
+          });
+          return;
+        }
+        const result = await searchCandidates(api, person, signal);
+        if (!signal.aborted) setState({ status: 'ready', person, result });
+      } catch (error) {
+        if (isAbortError(error) || signal.aborted) return;
+        setState({ status: 'error', message: describeError(error) });
+      }
+    })();
+  };
+
+  return (
+    <>
+      <h2 class="section">Einzelne Person prüfen</h2>
+      <p class="muted">
+        Sucht mögliche Dubletten zu einer beliebigen Person. Die ID steht in ChurchTools in der
+        Adresse der Person und hier in den Listen hinter dem Namen.
+      </p>
+      <form
+        class="toolbar"
+        onSubmit={(event) => {
+          event.preventDefault();
+          check();
+        }}
+      >
+        <label>
+          Personen-ID
+          <input
+            type="text"
+            inputMode="numeric"
+            autocomplete="off"
+            value={input}
+            onInput={(event) => setInput(event.currentTarget.value)}
+          />
+        </label>
+        <button
+          type="submit"
+          class="secondary"
+          disabled={personId === null || state.status === 'loading'}
+        >
+          Dubletten suchen
+        </button>
+      </form>
+      {state.status === 'loading' && <p class="muted">Wird gesucht …</p>}
+      {state.status === 'error' && (
+        <p class="notice error" role="alert">
+          {state.message}
+        </p>
+      )}
+      {state.status === 'ready' && (
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Person</th>
+              <th>Mögliche Dubletten</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <PersonInfo person={state.person} statuses={statusById} />
+              </td>
+              <td>
+                <Candidates result={state.result} statuses={statusById} />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      )}
+    </>
+  );
+}
+
+type StatusMap = ReadonlyMap<number, PersonStatus>;
+
+function statusLabel(status: PersonStatus): string {
+  return status.shortyTranslated
+    ? `${status.shortyTranslated} – ${status.nameTranslated}`
+    : status.nameTranslated;
+}
+
+function PersonInfo({ person, statuses }: { person: Person; statuses: StatusMap }) {
+  const status = person.statusId === undefined ? undefined : statuses.get(person.statusId);
   const details = [
+    status && `Status ${statusLabel(status)}`,
     person.email,
     person.birthday && `geb. ${formatDate(person.birthday)}`,
     person.city,
@@ -218,7 +402,13 @@ function PersonInfo({ person }: { person: Person }) {
   );
 }
 
-function Candidates({ result }: { result: CandidateResult | undefined }) {
+function Candidates({
+  result,
+  statuses,
+}: {
+  result: CandidateResult | undefined;
+  statuses: StatusMap;
+}) {
   if (!result) return <span class="muted">wird gesucht …</span>;
   if ('error' in result) return <span class="warn">Suche fehlgeschlagen: {result.error}</span>;
   if (result.candidates.length === 0) return <span class="muted">keine gefunden</span>;
@@ -226,7 +416,7 @@ function Candidates({ result }: { result: CandidateResult | undefined }) {
     <ul class="candidates">
       {result.candidates.map(({ person, reasons }) => (
         <li key={person.id}>
-          <PersonInfo person={person} />
+          <PersonInfo person={person} statuses={statuses} />
           <div>
             {reasons.map((reason) => (
               <span key={reason} class="badge">
