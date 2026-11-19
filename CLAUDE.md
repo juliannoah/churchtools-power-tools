@@ -54,6 +54,7 @@ src/
     module.ts           Vertrag für Module (PowerToolsModule: id, title, View)
     route.ts            Route der SPA + Benachrichtigung bei Navigationswechsel
     api-client.ts       fetch-Wrapper: Session, CSRF, Fehler (ApiError), Retry, Throttling
+    persons.ts          Personen vergleichen/anzeigen (normalize, nameKey, emailsOf …)
     logger.ts           Protokoll der Aktionen (im Arbeitsspeicher), Export als CSV/JSON
     ui/                 gemeinsame UI-Bausteine (mount, App/Panel, später Tabelle, Dialoge)
   api/                  whoami.ts, calendars.ts, appointments.ts, followups.ts,
@@ -71,6 +72,8 @@ src/
       restore-view.tsx  Oberfläche zum Wiederherstellen
     followups/          Reiter „Followups“: index.tsx, view.tsx, logic.ts
                         (Stufe A nur lesen, siehe „Modul Followups“)
+    duplicates/         Reiter „Dubletten“: allgemeine Suche über alle
+                        sichtbaren Personen (Stufe C, nur lesen)
 docs/
   openapi.json          OpenAPI-Spezifikation der Instanz (nicht eingecheckt, Bezug: docs/README.md)
 ```
@@ -147,7 +150,7 @@ Stufen:
 |---|---|---|
 | A | Nur lesen: offene Followups, Person, mögliche Dubletten (gleiche E-Mail oder exakt gleicher Vor- und Nachname), Filter nach Personenstatus, Einzelprüfung per Personen-ID | gebaut. Auf der Instanz bestätigt (2026-11-19): Followups, Personen und Gruppe werden geladen. Offen: Dublettenerkennung an einem echten Fall (über die Einzelprüfung), Statusfilter |
 | B | Bearbeiten: „Duplikat von …“ / „Kein Duplikat“ mit Vorschau, Protokoll | offen |
-| C | Allgemeine Dublettensuche über alle sichtbaren Personen (Wunsch vom 2026-11-19): Personen seitenweise laden, lokal nach gleichem Namen bzw. gleicher E-Mail gruppieren; Alternative `GET /persons/duplicates` (Beta, Rechte ungeklärt). Aktionen wie in Stufe B. | geplant, nach Stufe B |
+| C | Allgemeine Dublettensuche über alle sichtbaren Personen (Wunsch vom 2026-11-19): Personen seitenweise laden, lokal nach gleichem Namen bzw. gleicher E-Mail gruppieren; Alternative `GET /persons/duplicates` (Beta, Rechte ungeklärt). Aktionen wie in Stufe B. | Suche gebaut (Reiter „Dubletten“, nur lesen, eigene Gruppierung im Browser), Test auf der Instanz offen; Aktionen folgen mit Stufe B |
 
 Regeln für Stufe B:
 

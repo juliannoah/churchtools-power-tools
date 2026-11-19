@@ -13,6 +13,8 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
   gleicher Vor- und Nachname). Die Liste lässt sich auf einen Personenstatus
   eingrenzen, und zu einer einzelnen Person lässt sich per ID gezielt nach
   Dubletten suchen.
+- Neuer Reiter „Dubletten“ (nur lesen): prüft alle sichtbaren Personen auf
+  gleichen Vor- und Nachnamen oder gleiche E-Mail-Adresse.
 
 ## [0.1.0] – 2026-11-19
 
