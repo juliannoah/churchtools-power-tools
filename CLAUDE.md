@@ -127,8 +127,15 @@ docs/
 
 - `@updateURL`/`@downloadURL` zeigen auf
   `releases/latest/download/churchtools-power-tools.{meta,user}.js`.
-- GitHub Action (Phase 4): bei Tag `v*` testen, bauen, `.user.js` und
-  `.meta.js` als Release-Assets veröffentlichen.
+- GitHub Action `release.yml`: bei Tag `v*` prüfen, dass der Tag zur
+  Version in `package.json` passt, testen, bauen und `.user.js` und
+  `.meta.js` als Release-Assets veröffentlichen. Die Release-Notizen kommen
+  aus dem Abschnitt `## [<Version>]` in `CHANGELOG.md` – ohne diesen
+  Abschnitt schlägt das Release fehl.
+- Ablauf eines Releases: siehe README, Abschnitt „Release“. Tags werden nur
+  nach ausdrücklichem OK von Julian gesetzt.
+- `ci.yml` prüft jeden Push auf `main` und jeden Pull Request
+  (Typprüfung, Tests, Build).
 
 ## Phasen
 
@@ -138,7 +145,7 @@ docs/
 | 1 | Nur lesen: API-Client, whoami, Kalender, Termine als Tabelle | gebaut; Termine laden auf der Instanz funktioniert (2026-11-19), Uhrzeiten und ganztägige Termine bestätigt, Serien-Markierung an einer wöchentlichen Testserie bestätigt |
 | 2 | Auswahl: Filter, Checkboxen, Serien markiert | fertig, auf der Instanz getestet (2026-11-19) |
 | 3 | Löschen gemäß Sicherheitsregeln, Protokoll, Export, Rückgängig | gebaut (Einzeltermine und ganze Serien). Auf der Instanz bestätigt (2026-11-19, laut Protokoll): Trockenlauf, echtes Löschen von Einzelterminen, ganze Serie löschen, Rückgängig (Einzeltermine und Serie), Abbrechen, JSON-Export. Einzelne Serien-Vorkommen folgen als eigener Schritt |
-| 4 | GitHub Action, Release v0.1.0, README fertig | offen |
+| 4 | GitHub Action, Release v0.1.0, README fertig | gebaut: `.github/workflows/ci.yml` (main, PRs) und `release.yml` (Tag `v*`) |
 
 ## Entscheidungen
 

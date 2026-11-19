@@ -6,20 +6,24 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [0.1.0] – 2026-11-19
+
+Erste veröffentlichte Fassung.
+
 ### Hinzugefügt
 
 - Projekt-Grundgerüst: TypeScript (strict), Vite mit vite-plugin-monkey,
   Preact, Vitest.
 - Schwebender Startknopf und Seitenpanel im Shadow DOM, zusätzlich
   Menü-Eintrag „Power-Tools öffnen“ im Userscript-Manager.
-- Modul-Mechanismus (ein Reiter pro Modul) mit Platzhalter-Modul „Start“.
+- Modul-Mechanismus (ein Reiter pro Modul) mit Reiter „Start“.
 - Erkennung von Navigationswechseln der ChurchTools-SPA; das Skript hängt
   sich nur einmal ein.
 - API-Client für die ChurchTools-REST-API: nutzt die bestehende Anmeldung,
   schickt Anfragen nacheinander, wiederholt bei Überlastung/Serverfehlern und
   zeigt fehlende Anmeldung oder Berechtigung verständlich an.
 - Reiter „Start“ zeigt, als wer man angemeldet ist.
-- Neuer Reiter „Termine“ (nur lesen): Kalender und Zeitraum wählen, Termine
+- Reiter „Termine“: Kalender und Zeitraum wählen, Termine
   als Tabelle anzeigen; Vorkommen aus Terminserien sind markiert.
 - Termine filtern (Titel, Einzeltermine/Serien) und per Checkbox auswählen,
   auch alle angezeigten auf einmal. Die Auswahl zeigt, wie viele Vorkommen
@@ -39,3 +43,9 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 - „Rückgängig machen“: In der laufenden Sitzung gelöschte Termine lassen sich
   neu anlegen (ohne Raumbuchungen, Dienstplan-Events, Einladungen,
   Anmeldegruppen und Bilder).
+- Automatische Updates über GitHub-Releases.
+
+### Bekannte Grenzen
+
+- Einzelne Vorkommen einer Terminserie lassen sich noch nicht löschen.
+- Protokoll und „Rückgängig machen“ gelten nur bis zum Neuladen der Seite.

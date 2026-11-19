@@ -1,6 +1,6 @@
 {
   "name": "churchtools-power-tools",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Userscript mit Verwaltungs-Werkzeugen für ChurchTools (z. B. mehrere Termine auf einmal löschen).",
   "license": "MIT",
   "private": true,
