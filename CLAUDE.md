@@ -257,6 +257,7 @@ Kürzel oder ID sind nicht fest eingebaut.
 | 2026-11-19 | UI mit **Preact** statt Vanilla TS: Tabelle, Filter, Auswahl und Fortschritt sind zustandslastig; Preact kostet nur wenige KB. |
 | 2026-11-19 | Startknopf unten rechts **und** Menü-Eintrag im Userscript-Manager (`GM_registerMenuCommand`, einziger Grant). |
 | 2026-11-19 | Der Instanzname steht nicht im Repo (öffentlich, läuft auf jeder Instanz). |
+| 2026-11-19 | **Keine eigenen Knöpfe in der ChurchTools-Oberfläche.** Das Skript bleibt bei Startknopf und Panel und hängt nur an der dokumentierten API, nicht am undokumentierten Aufbau der Seite. |
 | 2026-11-19 | Lizenz **MIT**, Copyright-Vermerk mit dem GitHub-Handle `juliannoah` (kein Klarname). |
 | 2026-11-19 | Termine werden pro Kalender (`/calendars/{calendarId}/appointments`) oder über **alle Kalender** (`/calendars/appointments?calendar_ids[]=…`) geladen; Zeitraum höchstens 366 Tage, Vorbelegung heute + 90 Tage. Jede Zeile kennt ihre `calendarId` (für das Löschen nötig). |
 | 2026-11-19 | Löschen: `DELETE /calendars/{calendarId}/appointments/{appointmentId}` löscht bei Serien immer die **ganze Serie**. Einzelne Vorkommen gingen nur über `PUT` der kompletten Serie mit Ausnahme-Datum; das ist bewusst noch nicht gebaut. Ausgewählte Serien-Vorkommen werden übersprungen, außer der Nutzer wählt ausdrücklich „ganze Serie löschen“. Die einzutippende Anzahl ist die Zahl der Löschaufträge (eine Serie = 1). |
