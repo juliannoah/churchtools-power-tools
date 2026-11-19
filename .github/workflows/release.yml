@@ -1,0 +1,56 @@
+name: Release
+
+# Bei einem Tag v* (z. B. v0.1.0): testen, bauen und das Userscript als
+# Release veröffentlichen. Tampermonkey/Violentmonkey finden Updates über
+# releases/latest/download/churchtools-power-tools.{meta,user}.js.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Tag muss zur Version in package.json passen
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME passt nicht zu package.json (v$version)."
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: Abschnitt der Version aus CHANGELOG.md holen
+        run: |
+          awk -v version="$VERSION" '
+            /^## \[/ { printing = (index($0, "## [" version "]") == 1) ; next }
+            printing { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::Kein Abschnitt [$VERSION] in CHANGELOG.md gefunden."
+            exit 1
+          fi
+
+      - name: Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/churchtools-power-tools.user.js \
+            dist/churchtools-power-tools.meta.js \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file release-notes.md
