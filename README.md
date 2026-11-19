@@ -18,9 +18,13 @@ von ChurchTools.
 
 1. Im Browser [Tampermonkey](https://www.tampermonkey.net/) oder
    [Violentmonkey](https://violentmonkey.github.io/) installieren.
-2. Diesen Link öffnen und die Installation bestätigen:
+2. **Nutzerskripts freigeben** (Chrome und Edge mit Tampermonkey): Rechtsklick
+   auf das Tampermonkey-Symbol → „Erweiterung verwalten“ → „Nutzerskripts
+   zulassen“ einschalten. Ohne diese Freigabe führt der Browser das Skript
+   nicht aus, und der Knopf erscheint nicht.
+3. Diesen Link öffnen und die Installation bestätigen:
    **[churchtools-power-tools.user.js](https://github.com/juliannoah/churchtools-power-tools/releases/latest/download/churchtools-power-tools.user.js)**
-3. Die eigene ChurchTools-Seite (`https://<name>.church.tools`) neu laden.
+4. Die eigene ChurchTools-Seite (`https://<name>.church.tools`) neu laden.
    Unten rechts erscheint der Knopf „Power-Tools“.
 
 Updates holt der Userscript-Manager automatisch vom jeweils neuesten
