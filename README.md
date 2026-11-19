@@ -25,8 +25,8 @@ ChurchTools vereinfacht.
 - **Protokoll und Rückgängig:** Jede Löschung wird protokolliert (Export als
   CSV/JSON). Solange die Seite nicht neu geladen wird, lassen sich gelöschte
   Termine neu anlegen – allerdings ohne Raumbuchungen, Dienstplan-Events,
-  Einladungen, Anmeldegruppen und Bilder. ChurchTools selbst kennt keinen
-  Papierkorb für Termine; lösche also trotzdem mit Bedacht.
+  Einladungen, Anmeldegruppen und Bilder. Die ChurchTools-API bietet kein
+  Wiederherstellen gelöschter Termine; lösche also trotzdem mit Bedacht.
 
 ## Entwicklung
 
