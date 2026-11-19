@@ -18,6 +18,8 @@ interface GroupPickerProps {
   suggestionKey?: string;
   /** Suchtext für die Vorschläge, solange noch keiner gemerkt ist. */
   defaultQuery?: string;
+  /** Überschrift über den Vorschlägen; ohne Angabe wird der Suchtext genannt. */
+  suggestionLabel?: string;
 }
 
 /**
@@ -33,6 +35,7 @@ export function GroupPicker({
   idKey,
   suggestionKey,
   defaultQuery = '',
+  suggestionLabel,
 }: GroupPickerProps) {
   const [suggestionQuery, setSuggestionQuery] = useState(
     () => (suggestionKey && readSetting(suggestionKey)) || defaultQuery,
@@ -154,7 +157,11 @@ export function GroupPicker({
       <legend>{label}</legend>
       {suggestions.length > 0 && (
         <>
-          {suggestionKey && <div class="muted">Vorschläge („{suggestionQuery.trim()}“)</div>}
+          {suggestionKey && (
+            <div class="muted">
+              {suggestionLabel ?? `Vorschläge („${suggestionQuery.trim()}“)`}
+            </div>
+          )}
           {options(suggestions)}
         </>
       )}

@@ -192,7 +192,7 @@ describe('Followup bearbeiten', () => {
 
     await click('Kein Duplikat …');
 
-    expect(text()).toContain('Vorschläge („Gemeindeliste“)');
+    expect(text()).toContain('Vorschläge Gemeindelisten:');
     expect(text()).toContain('Gemeindeliste (Testort) (#33)');
     // Vorschläge werden nur angeboten, nicht von selbst gewählt.
     expect(text()).toContain('Noch keine Gruppe gewählt');

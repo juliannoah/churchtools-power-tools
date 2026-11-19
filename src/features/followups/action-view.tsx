@@ -332,6 +332,7 @@ export function FollowUpAction({
               if (group) setWithoutGroup(false);
             }}
             suggestionKey="followups:community-group-query"
+            suggestionLabel="Vorschläge Gemeindelisten:"
           />
           <label class="check-line">
             <input
