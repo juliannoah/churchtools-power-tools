@@ -432,11 +432,13 @@ button.link {
 
 .badge {
   display: inline-block;
-  padding: 1px 8px;
+  padding: 3px 8px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  /* Leicht abgerundetes Rechteck: bleibt auch bei mehrzeiligem Text sauber. */
+  border-radius: 6px;
   background: var(--bg-muted);
   font-size: 12px;
+  line-height: 1.35;
 }
 
 dl.facts {
