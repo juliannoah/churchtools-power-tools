@@ -96,6 +96,15 @@ async function chooseLive(): Promise<void> {
   await settle();
 }
 
+/** Wählt die erste angebotene Gruppe. */
+async function chooseGroup(): Promise<void> {
+  const radio = container.querySelector<HTMLInputElement>('.group-picker input[type=radio]');
+  if (!radio) throw new Error('Keine Gruppe zur Auswahl');
+  radio.checked = true;
+  radio.dispatchEvent(new Event('change', { bubbles: true }));
+  await settle();
+}
+
 const text = () => container.textContent ?? '';
 
 describe('Followup bearbeiten', () => {
@@ -150,17 +159,13 @@ describe('Followup bearbeiten', () => {
 
     expect(button('Trockenlauf starten').disabled).toBe(true);
 
-    const search = container.querySelector<HTMLInputElement>('.group-picker input');
+    const search = container.querySelector<HTMLInputElement>('.group-picker input[type=search]');
     if (!search) throw new Error('Gruppensuche nicht gefunden');
     search.value = 'Gemeindeliste';
     search.dispatchEvent(new Event('input', { bubbles: true }));
     await settle();
     await click('Suchen');
-    const select = container.querySelector<HTMLSelectElement>('.group-picker select');
-    if (!select) throw new Error('Trefferliste nicht gefunden');
-    select.value = '33';
-    select.dispatchEvent(new Event('change', { bubbles: true }));
-    await settle();
+    await chooseGroup();
 
     expect(text()).toContain('Person #900 in Gruppe #33 aufnehmen');
     await chooseLive();
@@ -168,5 +173,28 @@ describe('Followup bearbeiten', () => {
 
     expect(put.mock.calls.map(([path]) => path)).toEqual(['/groups/33/members/900']);
     expect(post.mock.calls.map(([path]) => path)).toEqual(['/followups/5/complete']);
+  });
+
+  it('zeigt gemerkte Gruppen beim nächsten Öffnen sofort als Vorschläge', async () => {
+    setup();
+    await click('Followups laden');
+    await click('Kein Duplikat …');
+    expect(container.querySelector('.group-picker input[type=radio]')).toBeNull();
+
+    const search = container.querySelector<HTMLInputElement>('.group-picker input[type=search]');
+    if (!search) throw new Error('Gruppensuche nicht gefunden');
+    search.value = 'Gemeindeliste';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    await settle();
+    await click('Suchen');
+    await click('Diese Treffer künftig als Vorschläge zeigen');
+    await click('Zurück');
+
+    await click('Kein Duplikat …');
+
+    expect(text()).toContain('Vorschläge („Gemeindeliste“)');
+    expect(text()).toContain('Gemeindeliste (Testort) (#33)');
+    // Vorschläge werden nur angeboten, nicht von selbst gewählt.
+    expect(text()).toContain('Noch keine Gruppe gewählt');
   });
 });

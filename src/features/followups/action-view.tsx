@@ -331,7 +331,7 @@ export function FollowUpAction({
               setCommunityGroup(group);
               if (group) setWithoutGroup(false);
             }}
-            queryKey="followups:community-group-query"
+            suggestionKey="followups:community-group-query"
           />
           <label class="check-line">
             <input
