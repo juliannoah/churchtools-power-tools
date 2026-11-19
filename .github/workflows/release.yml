@@ -32,7 +32,11 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
+
+      - name: Release bauen (ohne Trockenlauf-Option)
+        run: npm run build
+        env:
+          RELEASE_BUILD: 'true'
 
       - name: Abschnitt der Version aus CHANGELOG.md holen
         run: |

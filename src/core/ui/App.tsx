@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { isTestBuild } from '../build';
 import type { PowerToolsModule } from '../module';
 
 interface AppProps {
@@ -39,6 +40,7 @@ export function App({ version, modules, open, onOpenChange }: AppProps) {
           <header class="panel-header">
             <h1>
               ChurchTools Power-Tools <span class="version">v{version}</span>
+              {isTestBuild() && <span class="badge test">Testversion</span>}
             </h1>
             <button
               type="button"

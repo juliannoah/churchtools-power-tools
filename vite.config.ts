@@ -12,6 +12,9 @@ const metaFileName = 'churchtools-power-tools.meta.js';
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    // Nur der Release-Workflow setzt RELEASE_BUILD; alles andere (lokaler
+    // Build, Vorschau, Tests) ist eine Testversion mit Trockenlauf-Option.
+    __TEST_BUILD__: JSON.stringify(process.env.RELEASE_BUILD !== 'true'),
   },
   // Unter Vitest wird das Userscript-Plugin nicht gebraucht.
   plugins: process.env.VITEST

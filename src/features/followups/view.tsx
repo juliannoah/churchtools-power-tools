@@ -9,6 +9,7 @@ import {
 } from '../../api/persons';
 import type { Person, PersonStatus } from '../../api/types';
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
+import { isTestBuild } from '../../core/build';
 import type { Logger } from '../../core/logger';
 import { emailsOf, formatDate, statusLabel } from '../../core/persons';
 import { PersonInfo, type StatusMap } from '../../core/ui/PersonInfo';
@@ -148,7 +149,7 @@ export function FollowUpsView({ api, logger }: { api: ApiClient; logger: Logger 
         Zeigt deine offenen Followups, die betroffene Person und mögliche Dubletten (gleiche
         E-Mail oder gleicher Vor- und Nachname). Über „Personenstatus“ lässt sich die Liste z. B.
         auf selbstregistrierte Personen eingrenzen. Geändert wird erst nach Vorschau der
-        einzelnen Schritte; Standard ist ein Trockenlauf.
+        einzelnen Schritte.{isTestBuild() && ' Standard ist ein Trockenlauf.'}
       </p>
       <div class="toolbar">
         <button

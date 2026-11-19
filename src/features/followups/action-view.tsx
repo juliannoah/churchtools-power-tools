@@ -9,6 +9,7 @@ import {
 } from '../../api/relationships';
 import type { Group, Person } from '../../api/types';
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
+import { isTestBuild } from '../../core/build';
 import { LOG_RESULT_LABEL, type Logger } from '../../core/logger';
 import { GroupPicker } from '../../core/ui/GroupPicker';
 import { PersonInfo, type StatusMap } from '../../core/ui/PersonInfo';
@@ -56,7 +57,8 @@ type Relations =
 
 /**
  * Bearbeitet ein Followup: „Duplikat von …“ oder „Kein Duplikat“. Zeigt
- * vorab jeden Schritt; Vorgabe ist ein Trockenlauf, der nur prüft.
+ * vorab jeden Schritt. Testversionen bieten zusätzlich einen Trockenlauf
+ * als Vorgabe, der nur prüft.
  */
 export function FollowUpAction({
   api,
@@ -69,7 +71,9 @@ export function FollowUpAction({
 }: FollowUpActionProps) {
   const { followUp, person } = row;
   const [phase, setPhase] = useState<Phase>({ name: 'form' });
-  const [dryRun, setDryRun] = useState(true);
+  // Den Trockenlauf gibt es nur in Testversionen.
+  const dryRunOption = isTestBuild();
+  const [dryRun, setDryRun] = useState(dryRunOption);
   const [changed, setChanged] = useState(false);
 
   // Duplikat-Fall
@@ -211,8 +215,8 @@ export function FollowUpAction({
         {finished && failed && (
           <p class="notice error" role="alert">
             Ein Schritt ist fehlgeschlagen; die folgenden wurden nicht ausgeführt. Was davor als
-            „ausgeführt“ steht, ist in ChurchTools bereits geschehen. Ein erneuter Lauf
-            überspringt Erledigtes.
+            „ausgeführt“ steht, ist in ChurchTools bereits geschehen. Ein erneuter Lauf überspringt
+            Erledigtes.
           </p>
         )}
         {finished && (
@@ -279,9 +283,7 @@ export function FollowUpAction({
             </label>
           </fieldset>
 
-          {relations.status === 'loading' && (
-            <p class="muted">Beziehungstypen werden geladen …</p>
-          )}
+          {relations.status === 'loading' && <p class="muted">Beziehungstypen werden geladen …</p>}
           {relations.status === 'error' && (
             <p class="notice error" role="alert">
               Beziehungstypen konnten nicht geladen werden: {relations.message}
@@ -298,9 +300,7 @@ export function FollowUpAction({
                 Beziehungstyp
                 <select
                   value={relationTypeId ?? ''}
-                  onChange={(event) =>
-                    setRelationTypeId(Number(event.currentTarget.value) || null)
-                  }
+                  onChange={(event) => setRelationTypeId(Number(event.currentTarget.value) || null)}
                 >
                   <option value="">– bitte wählen –</option>
                   {relations.relations.map((entry) => (
@@ -358,38 +358,42 @@ export function FollowUpAction({
       ) : (
         <>
           <p>
-            <strong>Diese Schritte würden ausgeführt:</strong>
+            <strong>
+              {dryRun ? 'Diese Schritte würden ausgeführt:' : 'Diese Schritte werden ausgeführt:'}
+            </strong>
           </p>
           <ol class="steps">
             {steps.map((step) => (
               <li key={step.label}>{step.label}</li>
             ))}
           </ol>
-          <fieldset class="mode">
-            <legend>Modus</legend>
-            <label class="check-line">
-              <input
-                type="radio"
-                name="ct-pt-action-mode"
-                checked={dryRun}
-                onChange={() => setDryRun(true)}
-              />
-              <span>
-                <strong>Trockenlauf</strong> – prüft nur, was schon erledigt ist; ändert nichts.
-              </span>
-            </label>
-            <label class="check-line">
-              <input
-                type="radio"
-                name="ct-pt-action-mode"
-                checked={!dryRun}
-                onChange={() => setDryRun(false)}
-              />
-              <span>
-                <strong>Echt ausführen</strong> – die Schritte werden in ChurchTools durchgeführt.
-              </span>
-            </label>
-          </fieldset>
+          {dryRunOption && (
+            <fieldset class="mode">
+              <legend>Modus</legend>
+              <label class="check-line">
+                <input
+                  type="radio"
+                  name="ct-pt-action-mode"
+                  checked={dryRun}
+                  onChange={() => setDryRun(true)}
+                />
+                <span>
+                  <strong>Trockenlauf</strong> – prüft nur, was schon erledigt ist; ändert nichts.
+                </span>
+              </label>
+              <label class="check-line">
+                <input
+                  type="radio"
+                  name="ct-pt-action-mode"
+                  checked={!dryRun}
+                  onChange={() => setDryRun(false)}
+                />
+                <span>
+                  <strong>Echt ausführen</strong> – die Schritte werden in ChurchTools durchgeführt.
+                </span>
+              </label>
+            </fieldset>
+          )}
         </>
       )}
 

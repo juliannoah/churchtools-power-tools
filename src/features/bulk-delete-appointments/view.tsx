@@ -3,6 +3,7 @@ import { listAppointments, listAppointmentsOfCalendars } from '../../api/appoint
 import { listCalendars } from '../../api/calendars';
 import type { Calendar } from '../../api/types';
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
+import { isTestBuild } from '../../core/build';
 import type { Logger } from '../../core/logger';
 import { DeleteFlow } from './delete-view';
 import type { Trash } from './restore';
@@ -172,7 +173,7 @@ export function AppointmentsView({ api, logger, trash }: Services) {
       <h2>Termine</h2>
       <p class="muted">
         Termine anzeigen, filtern, auswählen und löschen. Gelöscht wird erst nach Vorschau und
-        ausdrücklicher Bestätigung; Standard ist ein Trockenlauf.
+        ausdrücklicher Bestätigung.{isTestBuild() && ' Standard ist ein Trockenlauf.'}
       </p>
       <form
         class="toolbar"

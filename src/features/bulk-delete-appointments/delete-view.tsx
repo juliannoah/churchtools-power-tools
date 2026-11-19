@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { deleteAppointment } from '../../api/appointments';
 import { type ApiClient, ApiError, describeError } from '../../core/api-client';
+import { isTestBuild } from '../../core/build';
 import type { Logger } from '../../core/logger';
 import { downloadLog } from '../../core/ui/download';
 import {
@@ -34,14 +35,17 @@ type Step =
   | { name: 'done'; dryRun: boolean; outcomes: readonly DeleteOutcome[] };
 
 /**
- * Löschen in drei Schritten: Vorschau (Standard: Trockenlauf, echtes Löschen
- * nur nach Eintippen der Anzahl) → Fortschritt mit Abbrechen → Zusammenfassung
+ * Löschen in drei Schritten: Vorschau (echtes Löschen nur nach Eintippen der
+ * Anzahl; Testversionen bieten zusätzlich einen Trockenlauf als Vorgabe) → Fortschritt mit Abbrechen → Zusammenfassung
  * mit Export des Protokolls.
  */
 export function DeleteFlow({ api, logger, trash, rows, selection, onClose }: DeleteFlowProps) {
   const [step, setStep] = useState<Step>({ name: 'preview' });
   const [deleteWholeSeries, setDeleteWholeSeries] = useState(false);
-  const [dryRun, setDryRun] = useState(true);
+  // Den Trockenlauf gibt es nur in Testversionen; im Release wird nach
+  // Vorschau und Eintippen der Anzahl direkt gelöscht.
+  const dryRunOption = isTestBuild();
+  const [dryRun, setDryRun] = useState(dryRunOption);
   const [typedCount, setTypedCount] = useState('');
   const [cancelRequested, setCancelRequested] = useState(false);
   const controller = useRef<AbortController | null>(null);
@@ -154,7 +158,8 @@ export function DeleteFlow({ api, logger, trash, rows, selection, onClose }: Del
         )}
         <p class="muted">
           Das Protokoll enthält Zeitpunkt, ID, Titel, Datum und Ergebnis jedes Termins
-          {logger.entries().length > step.outcomes.length && ' (alle Läufe seit dem Laden der Seite)'}
+          {logger.entries().length > step.outcomes.length &&
+            ' (alle Läufe seit dem Laden der Seite)'}
           . Es geht beim Neuladen der Seite verloren – bitte bei Bedarf jetzt speichern.
         </p>
         {!step.dryRun && summary.deleted > 0 && (
@@ -180,7 +185,9 @@ export function DeleteFlow({ api, logger, trash, rows, selection, onClose }: Del
             class="primary"
             onClick={() => onClose(!step.dryRun && summary.deleted > 0)}
           >
-            {!step.dryRun && summary.deleted > 0 ? 'Fertig – Termine neu laden' : 'Zurück zur Liste'}
+            {!step.dryRun && summary.deleted > 0
+              ? 'Fertig – Termine neu laden'
+              : 'Zurück zur Liste'}
           </button>
         </div>
       </section>
@@ -262,36 +269,38 @@ export function DeleteFlow({ api, logger, trash, rows, selection, onClose }: Del
             </tbody>
           </table>
 
-          <fieldset class="mode">
-            <legend>Modus</legend>
-            <label class="check-line">
-              <input
-                type="radio"
-                name="ct-pt-delete-mode"
-                checked={dryRun}
-                onChange={() => setDryRun(true)}
-              />
-              <span>
-                <strong>Trockenlauf</strong> – nur durchspielen und protokollieren, es wird nichts
-                gelöscht.
-              </span>
-            </label>
-            <label class="check-line">
-              <input
-                type="radio"
-                name="ct-pt-delete-mode"
-                checked={!dryRun}
-                onChange={() => {
-                  setDryRun(false);
-                  setTypedCount('');
-                }}
-              />
-              <span>
-                <strong>Echt löschen</strong> – die Termine werden in ChurchTools endgültig
-                gelöscht. Das lässt sich nicht rückgängig machen.
-              </span>
-            </label>
-          </fieldset>
+          {dryRunOption && (
+            <fieldset class="mode">
+              <legend>Modus</legend>
+              <label class="check-line">
+                <input
+                  type="radio"
+                  name="ct-pt-delete-mode"
+                  checked={dryRun}
+                  onChange={() => setDryRun(true)}
+                />
+                <span>
+                  <strong>Trockenlauf</strong> – nur durchspielen und protokollieren, es wird nichts
+                  gelöscht.
+                </span>
+              </label>
+              <label class="check-line">
+                <input
+                  type="radio"
+                  name="ct-pt-delete-mode"
+                  checked={!dryRun}
+                  onChange={() => {
+                    setDryRun(false);
+                    setTypedCount('');
+                  }}
+                />
+                <span>
+                  <strong>Echt löschen</strong> – die Termine werden in ChurchTools endgültig
+                  gelöscht. Das lässt sich nicht rückgängig machen.
+                </span>
+              </label>
+            </fieldset>
+          )}
 
           {!dryRun && (
             <label class="confirm">
