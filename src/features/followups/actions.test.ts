@@ -6,6 +6,7 @@ import {
   DUPLICATE_NOTE,
   addDays,
   buildDuplicateSteps,
+  buildMergeSteps,
   buildNotDuplicateSteps,
   findDuplicateRelations,
   runSteps,
@@ -188,6 +189,31 @@ describe('Duplikat-Fall', () => {
     const steps = buildDuplicateSteps({ ...input, followUpId: undefined }, fakeOps());
 
     expect(steps).toHaveLength(3);
+  });
+});
+
+describe('Dubletten zur Zusammenführung weitergeben', () => {
+  it('trägt jede übrige Person als Duplikat des Hauptaccounts ein und nimmt alle einmal in die Gruppe auf', async () => {
+    const ops = fakeOps();
+    const steps = buildMergeSteps(
+      { mainId: 10, duplicateIds: [900, 901], relation, duplicateGroupId: 77 },
+      ops,
+    );
+
+    const { outcomes } = await run(steps, false);
+
+    expect(outcomes.map((outcome) => outcome.result)).toEqual(Array(5).fill('done'));
+    expect(vi.mocked(ops.createRelationship).mock.calls).toEqual([
+      [10, 900, 8],
+      [10, 901, 8],
+    ]);
+    expect(vi.mocked(ops.addGroupMember).mock.calls).toEqual([
+      [77, 10],
+      [77, 900],
+      [77, 901],
+    ]);
+    expect(ops.postponeFollowUp).not.toHaveBeenCalled();
+    expect(ops.addFollowUpNote).not.toHaveBeenCalled();
   });
 });
 

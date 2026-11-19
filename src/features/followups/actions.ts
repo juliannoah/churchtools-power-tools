@@ -149,6 +149,40 @@ export function buildDuplicateSteps(input: DuplicateActionInput, ops: ActionOps)
   return steps;
 }
 
+export interface MergeActionInput {
+  /** Der Hauptaccount – der Datensatz, der bleiben soll. */
+  mainId: number;
+  /** Alle übrigen Personen der Gruppe; sie werden Duplikate des Hauptaccounts. */
+  duplicateIds: readonly number[];
+  relation: DuplicateRelation;
+  duplicateGroupId: number;
+}
+
+/**
+ * Schritte, um Dubletten zur Zusammenführung weiterzugeben: jede übrige
+ * Person als Duplikat des Hauptaccounts eintragen, dann alle in die Gruppe
+ * für Duplikate aufnehmen. Zusammengeführt wird hier nichts.
+ */
+export function buildMergeSteps(input: MergeActionInput, ops: ActionOps): ActionStep[] {
+  const perDuplicate = input.duplicateIds.map((duplicateId) =>
+    buildDuplicateSteps(
+      {
+        duplicateId,
+        originalId: input.mainId,
+        relation: input.relation,
+        duplicateGroupId: input.duplicateGroupId,
+        today: new Date(),
+      },
+      ops,
+    ),
+  );
+  // Je Duplikat: [Beziehung, Hauptaccount in Gruppe, Duplikat in Gruppe].
+  const relationSteps = perDuplicate.flatMap((steps) => steps.slice(0, 1));
+  const mainGroupStep = perDuplicate[0]?.slice(1, 2) ?? [];
+  const duplicateGroupSteps = perDuplicate.flatMap((steps) => steps.slice(2, 3));
+  return [...relationSteps, ...mainGroupStep, ...duplicateGroupSteps];
+}
+
 export interface NotDuplicateActionInput {
   personId: number;
   followUpId: number;

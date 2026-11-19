@@ -1,28 +1,18 @@
-import { useEffect, useMemo, useState } from 'preact/hooks';
-import { addFollowUpNote, completeFollowUp, postponeFollowUp } from '../../api/followups';
-import { addGroupMember, isGroupMember } from '../../api/groups';
-import {
-  createRelationship,
-  deleteRelationship,
-  listRelationshipTypes,
-  listRelationships,
-} from '../../api/relationships';
+import { useState } from 'preact/hooks';
 import type { Group, Person } from '../../api/types';
-import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
-import { isTestBuild } from '../../core/build';
-import { LOG_RESULT_LABEL, type Logger } from '../../core/logger';
+import type { ApiClient } from '../../core/api-client';
+import type { Logger } from '../../core/logger';
 import { GroupPicker } from '../../core/ui/GroupPicker';
 import { PersonInfo, type StatusMap } from '../../core/ui/PersonInfo';
 import {
-  type ActionOps,
-  type ActionStep,
-  type DuplicateRelation,
-  type StepOutcome,
-  buildDuplicateSteps,
-  buildNotDuplicateSteps,
-  findDuplicateRelations,
-  runSteps,
-} from './actions';
+  RelationSection,
+  StepPreview,
+  StepRunView,
+  useActionOps,
+  useDuplicateRelation,
+  useStepRunner,
+} from './action-parts';
+import { type ActionStep, buildDuplicateSteps, buildNotDuplicateSteps } from './actions';
 import type { DuplicateCandidate, FollowUpRow } from './logic';
 
 export type ActionKind = 'duplicate' | 'not-duplicate';
@@ -34,6 +24,11 @@ export type ActionKind = 'duplicate' | 'not-duplicate';
  */
 const COMMUNITY_GROUP_QUERY = 'Gemeindeliste';
 
+/** Unter diesem Schlüssel merkt sich der Browser die Gruppe für Duplikate. */
+export const DUPLICATE_GROUP_KEY = 'duplicates:group-id';
+/** Suchtext, mit dem die Gruppe für Duplikate beim ersten Mal gesucht wird. */
+export const DUPLICATE_GROUP_QUERY = 'Duplikat';
+
 interface FollowUpActionProps {
   api: ApiClient;
   logger: Logger;
@@ -44,16 +39,6 @@ interface FollowUpActionProps {
   /** @param changed true, wenn in ChurchTools etwas geändert wurde. */
   onClose: (changed: boolean) => void;
 }
-
-type Phase =
-  | { name: 'form' }
-  | { name: 'running'; dryRun: boolean; total: number; outcomes: readonly StepOutcome[] }
-  | { name: 'done'; dryRun: boolean; outcomes: readonly StepOutcome[] };
-
-type Relations =
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'ready'; relations: DuplicateRelation[] };
 
 /**
  * Bearbeitet ein Followup: „Duplikat von …“ oder „Kein Duplikat“. Zeigt
@@ -70,56 +55,23 @@ export function FollowUpAction({
   onClose,
 }: FollowUpActionProps) {
   const { followUp, person } = row;
-  const [phase, setPhase] = useState<Phase>({ name: 'form' });
-  // Den Trockenlauf gibt es nur in Testversionen.
-  const dryRunOption = isTestBuild();
-  const [dryRun, setDryRun] = useState(dryRunOption);
-  const [changed, setChanged] = useState(false);
+  const ops = useActionOps(api);
+  const runner = useStepRunner(
+    logger,
+    kind === 'duplicate' ? 'Followup: Duplikat' : 'Followup: kein Duplikat',
+  );
 
   // Duplikat-Fall
   const [originalChoice, setOriginalChoice] = useState<number | 'other' | null>(
     candidates[0]?.person.id ?? (kind === 'duplicate' ? 'other' : null),
   );
   const [otherId, setOtherId] = useState('');
-  const [relations, setRelations] = useState<Relations>({ status: 'loading' });
-  const [relationTypeId, setRelationTypeId] = useState<number | null>(null);
+  const relationChoice = useDuplicateRelation(api, kind === 'duplicate');
   const [duplicateGroup, setDuplicateGroup] = useState<Group | null>(null);
 
   // Fall „kein Duplikat“
   const [communityGroup, setCommunityGroup] = useState<Group | null>(null);
   const [withoutGroup, setWithoutGroup] = useState(false);
-
-  useEffect(() => {
-    if (kind !== 'duplicate') return;
-    const controller = new AbortController();
-    listRelationshipTypes(api, controller.signal)
-      .then((types) => {
-        const found = findDuplicateRelations(types);
-        setRelations({ status: 'ready', relations: found });
-        if (found.length === 1 && found[0]) setRelationTypeId(found[0].type.id);
-      })
-      .catch((error: unknown) => {
-        if (isAbortError(error)) return;
-        setRelations({ status: 'error', message: describeError(error) });
-      });
-    return () => controller.abort();
-  }, [api, kind]);
-
-  const ops = useMemo<ActionOps>(
-    () => ({
-      listRelationships: (personId) => listRelationships(api, personId),
-      createRelationship: (personId, other, typeId) =>
-        createRelationship(api, personId, other, typeId),
-      deleteRelationship: (personId, relationshipId) =>
-        deleteRelationship(api, personId, relationshipId),
-      isGroupMember: (groupId, personId) => isGroupMember(api, groupId, personId),
-      addGroupMember: (groupId, personId) => addGroupMember(api, groupId, personId),
-      postponeFollowUp: (id, dueDate) => postponeFollowUp(api, id, dueDate),
-      addFollowUpNote: (id, comment) => addFollowUpNote(api, id, comment),
-      completeFollowUp: (id) => completeFollowUp(api, id),
-    }),
-    [api],
-  );
 
   const originalId =
     originalChoice === 'other'
@@ -127,10 +79,7 @@ export function FollowUpAction({
         ? Number(otherId.trim())
         : null
       : originalChoice;
-  const relation =
-    relations.status === 'ready'
-      ? (relations.relations.find((entry) => entry.type.id === relationTypeId) ?? null)
-      : null;
+  const { relation } = relationChoice;
 
   // Was fehlt noch, bevor es losgehen kann?
   let missing: string | null = null;
@@ -166,70 +115,17 @@ export function FollowUpAction({
     );
   }
 
-  const start = (): void => {
-    const runDry = dryRun;
-    setPhase({ name: 'running', dryRun: runDry, total: steps.length, outcomes: [] });
-    void runSteps(steps, {
-      dryRun: runDry,
-      action: kind === 'duplicate' ? 'Followup: Duplikat' : 'Followup: kein Duplikat',
-      log: logger.add,
-      describeError,
-      onProgress: (outcomes) =>
-        setPhase({ name: 'running', dryRun: runDry, total: steps.length, outcomes: [...outcomes] }),
-    }).then((outcomes) => {
-      if (!runDry && outcomes.some((outcome) => outcome.result === 'done')) setChanged(true);
-      setPhase({ name: 'done', dryRun: runDry, outcomes });
-    });
-  };
-
   const title =
     kind === 'duplicate' ? 'Followup bearbeiten: Duplikat' : 'Followup bearbeiten: kein Duplikat';
 
-  if (phase.name !== 'form') {
-    const finished = phase.name === 'done';
-    const failed = phase.outcomes.some((outcome) => outcome.result === 'failed');
+  if (runner.phase.name !== 'form') {
     return (
-      <section class="delete-flow">
-        <h3>
-          {title} – {phase.dryRun ? 'Trockenlauf' : 'Ausführung'}
-          {finished ? ' beendet' : ' läuft …'}
-        </h3>
-        {phase.name === 'running' && <progress max={phase.total} value={phase.outcomes.length} />}
-        <ol class="steps">
-          {phase.outcomes.map((outcome) => (
-            <li key={outcome.step.label} class={outcome.result === 'failed' ? 'warn' : undefined}>
-              {outcome.step.label}
-              <div class={outcome.result === 'failed' ? undefined : 'muted'}>
-                {LOG_RESULT_LABEL[outcome.result]}
-                {outcome.detail && ` – ${outcome.detail}`}
-              </div>
-            </li>
-          ))}
-        </ol>
-        {finished && phase.dryRun && (
-          <p class="notice">
-            Es wurde <strong>nichts geändert</strong>. Der Trockenlauf hat nur geprüft, was schon
-            erledigt ist.
-          </p>
-        )}
-        {finished && failed && (
-          <p class="notice error" role="alert">
-            Ein Schritt ist fehlgeschlagen; die folgenden wurden nicht ausgeführt. Was davor als
-            „ausgeführt“ steht, ist in ChurchTools bereits geschehen. Ein erneuter Lauf überspringt
-            Erledigtes.
-          </p>
-        )}
-        {finished && (
-          <div class="actions">
-            <button type="button" class="secondary" onClick={() => setPhase({ name: 'form' })}>
-              Zurück zur Vorschau
-            </button>
-            <button type="button" class="primary" onClick={() => onClose(changed)}>
-              {changed ? 'Fertig – Followups neu laden' : 'Schließen'}
-            </button>
-          </div>
-        )}
-      </section>
+      <StepRunView
+        title={title}
+        runner={runner}
+        doneLabel="Fertig – Followups neu laden"
+        onClose={() => onClose(runner.changed)}
+      />
     );
   }
 
@@ -283,49 +179,15 @@ export function FollowUpAction({
             </label>
           </fieldset>
 
-          {relations.status === 'loading' && <p class="muted">Beziehungstypen werden geladen …</p>}
-          {relations.status === 'error' && (
-            <p class="notice error" role="alert">
-              Beziehungstypen konnten nicht geladen werden: {relations.message}
-            </p>
-          )}
-          {relations.status === 'ready' && relations.relations.length === 0 && (
-            <p class="notice error" role="alert">
-              In dieser Instanz gibt es keinen Beziehungstyp, bei dem eine Seite „Duplikat“ heißt.
-            </p>
-          )}
-          {relations.status === 'ready' && relations.relations.length > 1 && (
-            <div class="toolbar">
-              <label>
-                Beziehungstyp
-                <select
-                  value={relationTypeId ?? ''}
-                  onChange={(event) => setRelationTypeId(Number(event.currentTarget.value) || null)}
-                >
-                  <option value="">– bitte wählen –</option>
-                  {relations.relations.map((entry) => (
-                    <option key={entry.type.id} value={entry.type.id}>
-                      {entry.type.nameTranslated} (#{entry.type.id})
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
-          {relation && (
-            <p class="muted">
-              Beziehungstyp: {relation.type.degreeNameATranslated} /{' '}
-              {relation.type.degreeNameBTranslated} (#{relation.type.id})
-            </p>
-          )}
+          <RelationSection choice={relationChoice} />
 
           <GroupPicker
             api={api}
             label="Gruppe für Duplikate"
             value={duplicateGroup}
             onChange={setDuplicateGroup}
-            idKey="duplicates:group-id"
-            defaultQuery="Duplikat"
+            idKey={DUPLICATE_GROUP_KEY}
+            defaultQuery={DUPLICATE_GROUP_QUERY}
           />
         </>
       ) : (
@@ -353,56 +215,19 @@ export function FollowUpAction({
         </>
       )}
 
-      {missing ? (
-        <p class="notice">{missing}</p>
-      ) : (
-        <>
-          <p>
-            <strong>
-              {dryRun ? 'Diese Schritte würden ausgeführt:' : 'Diese Schritte werden ausgeführt:'}
-            </strong>
-          </p>
-          <ol class="steps">
-            {steps.map((step) => (
-              <li key={step.label}>{step.label}</li>
-            ))}
-          </ol>
-          {dryRunOption && (
-            <fieldset class="mode">
-              <legend>Modus</legend>
-              <label class="check-line">
-                <input
-                  type="radio"
-                  name="ct-pt-action-mode"
-                  checked={dryRun}
-                  onChange={() => setDryRun(true)}
-                />
-                <span>
-                  <strong>Trockenlauf</strong> – prüft nur, was schon erledigt ist; ändert nichts.
-                </span>
-              </label>
-              <label class="check-line">
-                <input
-                  type="radio"
-                  name="ct-pt-action-mode"
-                  checked={!dryRun}
-                  onChange={() => setDryRun(false)}
-                />
-                <span>
-                  <strong>Echt ausführen</strong> – die Schritte werden in ChurchTools durchgeführt.
-                </span>
-              </label>
-            </fieldset>
-          )}
-        </>
-      )}
+      {missing ? <p class="notice">{missing}</p> : <StepPreview steps={steps} runner={runner} />}
 
       <div class="actions">
-        <button type="button" class="secondary" onClick={() => onClose(changed)}>
+        <button type="button" class="secondary" onClick={() => onClose(runner.changed)}>
           Zurück
         </button>
-        <button type="button" class="primary" disabled={missing !== null} onClick={start}>
-          {dryRun ? 'Trockenlauf starten' : 'Jetzt ausführen'}
+        <button
+          type="button"
+          class="primary"
+          disabled={missing !== null}
+          onClick={() => runner.start(steps)}
+        >
+          {runner.dryRun ? 'Trockenlauf starten' : 'Jetzt ausführen'}
         </button>
       </div>
     </section>
