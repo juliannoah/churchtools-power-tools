@@ -3,6 +3,10 @@ import { listAppointments, listAppointmentsOfCalendars } from '../../api/appoint
 import { listCalendars } from '../../api/calendars';
 import type { Calendar } from '../../api/types';
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
+import type { Logger } from '../../core/logger';
+import { DeleteFlow } from './delete-view';
+import type { Trash } from './restore';
+import { RestoreFlow } from './restore-view';
 import {
   type AppointmentRow,
   type DateRange,
@@ -35,6 +39,14 @@ interface LoadedAppointments {
   /** Spalte „Kalender“ zeigen (bei der Abfrage über alle Kalender). */
   showCalendar: boolean;
   range: DateRange;
+  /** Lädt dieselbe Abfrage neu (z. B. nach dem Löschen). */
+  reload: () => void;
+}
+
+interface Services {
+  api: ApiClient;
+  logger: Logger;
+  trash: Trash;
 }
 
 /** Wert der Kalender-Auswahl für „alle Kalender“. */
@@ -47,10 +59,10 @@ const CALENDAR_TYPE_LABEL: Record<Calendar['type'], string> = {
 };
 
 /**
- * Kalender wählen, dessen Termine als Tabelle anzeigen, filtern und
- * auswählen. Es wird nur gelesen – das Löschen folgt in Phase 3.
+ * Kalender wählen, dessen Termine als Tabelle anzeigen, filtern, auswählen
+ * und – nach Vorschau und Bestätigung – löschen.
  */
-export function AppointmentsView({ api }: { api: ApiClient }) {
+export function AppointmentsView({ api, logger, trash }: Services) {
   const [calendars, setCalendars] = useState<Loadable<Calendar[]>>({ status: 'loading' });
   const [calendarId, setCalendarId] = useState<number | typeof ALL_CALENDARS | undefined>();
   const [range, setRange] = useState<DateRange>(() => defaultRange(new Date()));
@@ -61,6 +73,7 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
   // Reiter geschlossen wird.
   const pending = useRef<AbortController | null>(null);
   const loadCounter = useRef(0);
+  const [restoring, setRestoring] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -85,23 +98,21 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
   const selected = allCalendars ? undefined : calendarList.find((c) => c.id === calendarId);
   const canLoad = (allCalendars && calendarList.length > 0) || selected !== undefined;
 
-  const load = (): void => {
-    if (!canLoad || rangeError) return;
+  /** @param single Einzelner Kalender; undefined = alle aus `all`. */
+  const startLoad = (single: Calendar | undefined, all: Calendar[], loadRange: DateRange): void => {
     pending.current?.abort();
     const controller = new AbortController();
     pending.current = controller;
     setAppointments({ status: 'loading' });
-    const request = selected
-      ? listAppointments(api, selected.id, range, controller.signal)
+    const request = single
+      ? listAppointments(api, single.id, loadRange, controller.signal)
       : listAppointmentsOfCalendars(
           api,
-          calendarList.map((calendar) => calendar.id),
-          range,
+          all.map((calendar) => calendar.id),
+          loadRange,
           controller.signal,
         );
-    const scope = selected
-      ? `„${calendarLabel(selected)}“`
-      : `allen ${calendarList.length} Kalendern`;
+    const scope = single ? `„${calendarLabel(single)}“` : `allen ${all.length} Kalendern`;
     request
       .then((occurrences) => {
         if (controller.signal.aborted) return;
@@ -111,8 +122,10 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
             loadId: ++loadCounter.current,
             rows: toRows(occurrences),
             scope,
-            showCalendar: !selected,
-            range,
+            showCalendar: !single,
+            range: loadRange,
+            // Dieselbe Abfrage noch einmal, unabhängig vom Formular.
+            reload: () => startLoad(single, all, loadRange),
           },
         });
       })
@@ -120,6 +133,11 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
         if (isAbortError(error) || controller.signal.aborted) return;
         setAppointments({ status: 'error', message: describeError(error) });
       });
+  };
+
+  const load = (): void => {
+    if (!canLoad || rangeError) return;
+    startLoad(selected, calendarList, range);
   };
 
   if (calendars.status === 'loading') return <p class="muted">Kalender werden geladen …</p>;
@@ -134,11 +152,27 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
     return <p class="notice">Du hast in ChurchTools auf keinen Kalender Zugriff.</p>;
   }
 
+  const deletedCount = trash.items().length;
+  if (restoring) {
+    return (
+      <RestoreFlow
+        api={api}
+        logger={logger}
+        trash={trash}
+        onClose={(changed) => {
+          setRestoring(false);
+          if (changed && appointments.status === 'ready') appointments.value.reload();
+        }}
+      />
+    );
+  }
+
   return (
     <>
       <h2>Termine</h2>
       <p class="muted">
-        Termine anzeigen, filtern und auswählen. Es wird noch nichts geändert oder gelöscht.
+        Termine anzeigen, filtern, auswählen und löschen. Gelöscht wird erst nach Vorschau und
+        ausdrücklicher Bestätigung; Standard ist ein Trockenlauf.
       </p>
       <form
         class="toolbar"
@@ -190,17 +224,40 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
           Termine laden
         </button>
       </form>
+      {deletedCount > 0 && (
+        <div class="selection-bar">
+          <span>
+            {deletedCount} in dieser Sitzung{' '}
+            {deletedCount === 1 ? 'gelöschter Termin' : 'gelöschte Termine'}
+          </span>
+          <span class="selection-actions">
+            <button type="button" class="secondary" onClick={() => setRestoring(true)}>
+              Wiederherstellen …
+            </button>
+          </span>
+        </div>
+      )}
       {rangeError && (
         <p class="notice error" role="alert">
           {rangeError}
         </p>
       )}
-      <AppointmentResult state={appointments} />
+      <AppointmentResult
+        state={appointments}
+        api={api}
+        logger={logger}
+        trash={trash}
+        onUndo={() => setRestoring(true)}
+      />
     </>
   );
 }
 
-function AppointmentResult({ state }: { state: Loadable<LoadedAppointments> }) {
+function AppointmentResult({
+  state,
+  onUndo,
+  ...services
+}: { state: Loadable<LoadedAppointments>; onUndo: () => void } & Services) {
   switch (state.status) {
     case 'idle':
       return <p class="muted">Kalender und Zeitraum wählen, dann „Termine laden“.</p>;
@@ -213,7 +270,14 @@ function AppointmentResult({ state }: { state: Loadable<LoadedAppointments> }) {
         </p>
       );
     case 'ready':
-      return <AppointmentTable key={state.value.loadId} {...state.value} />;
+      return (
+        <AppointmentTable
+          key={state.value.loadId}
+          {...state.value}
+          {...services}
+          onUndo={onUndo}
+        />
+      );
   }
 }
 
@@ -223,9 +287,37 @@ const KIND_LABEL: Record<KindFilter, string> = {
   series: 'Nur Serientermine',
 };
 
-function AppointmentTable({ rows, scope, showCalendar, range }: LoadedAppointments) {
+function AppointmentTable({
+  rows,
+  scope,
+  showCalendar,
+  range,
+  reload,
+  api,
+  logger,
+  trash,
+  onUndo,
+}: LoadedAppointments & Services & { onUndo: () => void }) {
   const [filter, setFilter] = useState<RowFilter>(NO_FILTER);
   const [selection, setSelection] = useState<Selection>(() => new Set<string>());
+  const [deleting, setDeleting] = useState(false);
+
+  if (deleting) {
+    return (
+      <DeleteFlow
+        api={api}
+        logger={logger}
+        trash={trash}
+        rows={rows}
+        selection={selection}
+        onClose={(changed, undo) => {
+          if (changed) reload();
+          else setDeleting(false);
+          if (undo) onUndo();
+        }}
+      />
+    );
+  }
 
   const summary = `${rows.length} ${rows.length === 1 ? 'Termin' : 'Termine'} in ${scope} (${range.from} bis ${range.to})`;
   if (rows.length === 0) return <p class="notice">{summary}.</p>;
@@ -286,9 +378,14 @@ function AppointmentTable({ rows, scope, showCalendar, range }: LoadedAppointmen
           <span class="warn">{selected.hidden} davon durch den Filter ausgeblendet</span>
         )}
         {selected.count > 0 && (
-          <button type="button" class="link" onClick={() => setSelection(new Set<string>())}>
-            Auswahl aufheben
-          </button>
+          <span class="selection-actions">
+            <button type="button" class="link" onClick={() => setSelection(new Set<string>())}>
+              Auswahl aufheben
+            </button>
+            <button type="button" class="primary danger" onClick={() => setDeleting(true)}>
+              Löschen … (Vorschau)
+            </button>
+          </span>
         )}
       </div>
       {visible.length === 0 ? (

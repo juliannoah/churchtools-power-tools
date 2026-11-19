@@ -1,6 +1,8 @@
 import { render } from 'preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type ApiClient, ApiError } from '../../core/api-client';
+import { createLogger } from '../../core/logger';
+import { createTrash } from './restore';
 import { AppointmentsView } from './view';
 
 // Ausschließlich erfundene Daten.
@@ -24,7 +26,13 @@ const appointments = {
           isInternal: false,
           repeatId: 7,
           repeatFrequency: 1,
+          repeatOption: null,
           repeatUntil: null,
+          additionals: [],
+          exceptions: [],
+          link: null,
+          address: null,
+          onBehalfOfPid: null,
           calendar: calendars.data[0],
         },
         calculated: { startDate: '2026-03-08', endDate: '2026-03-08', iCalUid: 'uid-1' },
@@ -38,6 +46,10 @@ function fakeApi(get: ApiClient['get']): ApiClient {
   return { get, post: unused, put: unused, delete: unused };
 }
 
+function View({ api }: { api: ApiClient }) {
+  return <AppointmentsView api={api} logger={createLogger()} trash={createTrash()} />;
+}
+
 const container = document.createElement('div');
 // Preact führt Effekte und State-Änderungen zeitversetzt aus.
 const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
@@ -49,7 +61,7 @@ describe('AppointmentsView', () => {
     const get = vi.fn(async (path: string) =>
       path === '/calendars' ? calendars : appointments,
     ) as unknown as ApiClient['get'];
-    render(<AppointmentsView api={fakeApi(get)} />, container);
+    render(<View api={fakeApi(get)} />, container);
     await settle();
 
     expect(container.querySelector('select')?.textContent).toContain('Testkalender');
@@ -75,7 +87,7 @@ describe('AppointmentsView', () => {
   it('zählt die Auswahl und blendet per Filter aus, ohne sie zu verlieren', async () => {
     const get = (async (path: string) =>
       path === '/calendars' ? calendars : appointments) as ApiClient['get'];
-    render(<AppointmentsView api={fakeApi(get)} />, container);
+    render(<View api={fakeApi(get)} />, container);
     await settle();
     container.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
     await settle();
@@ -107,7 +119,7 @@ describe('AppointmentsView', () => {
     const get = vi.fn(async (path: string) =>
       path === '/calendars' ? { data: [calendars.data[0], second] } : appointments,
     ) as unknown as ApiClient['get'];
-    render(<AppointmentsView api={fakeApi(get)} />, container);
+    render(<View api={fakeApi(get)} />, container);
     await settle();
 
     const select = container.querySelector<HTMLSelectElement>('select');
@@ -134,7 +146,7 @@ describe('AppointmentsView', () => {
     const get = (async () => {
       throw new ApiError('forbidden', 'Dafür fehlt dir in ChurchTools die Berechtigung.', 403);
     }) as ApiClient['get'];
-    render(<AppointmentsView api={fakeApi(get)} />, container);
+    render(<View api={fakeApi(get)} />, container);
     await settle();
 
     expect(container.querySelector('[role=alert]')?.textContent).toContain('Berechtigung');
