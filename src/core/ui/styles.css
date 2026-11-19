@@ -76,6 +76,11 @@ button {
   box-shadow: -4px 0 16px rgb(0 0 0 / 0.2);
 }
 
+/* Eingeklappt: unsichtbar, aber weiter im DOM, damit der Inhalt erhalten bleibt. */
+.panel[hidden] {
+  display: none;
+}
+
 .panel-header {
   display: flex;
   align-items: center;

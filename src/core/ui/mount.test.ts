@@ -1,3 +1,4 @@
+import { useState } from 'preact/hooks';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { PowerToolsModule } from '../module';
 import { HOST_ID, mountApp } from './mount';
@@ -40,7 +41,28 @@ describe('mountApp', () => {
     expect(shadow.querySelector('.panel-body')?.textContent).toBe('Inhalt des Testmoduls');
 
     app?.close();
-    expect(shadow.querySelector('.panel')).toBeNull();
+    expect(shadow.querySelector<HTMLElement>('.panel')?.hidden).toBe(true);
+  });
+
+  it('behält den Inhalt beim Ein- und Ausklappen', () => {
+    let mounts = 0;
+    const counting: PowerToolsModule = {
+      id: 'zaehler',
+      title: 'Zähler',
+      View: () => {
+        useState(() => mounts++);
+        return 'Inhalt';
+      },
+    };
+    const app = mountApp({ version: '1.2.3', modules: [counting] });
+    const shadow = shadowOfHost();
+
+    app?.open();
+    app?.close();
+    app?.open();
+
+    expect(mounts).toBe(1);
+    expect(shadow.querySelector<HTMLElement>('.panel')?.hidden).toBe(false);
   });
 
   it('hängt das Host-Element wieder ein, wenn es entfernt wurde', () => {
