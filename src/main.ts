@@ -5,6 +5,7 @@ import { mountApp } from './core/ui/mount';
 import { createApiClient } from './core/api-client';
 import { createLogger } from './core/logger';
 import { createAppointmentsModule } from './features/bulk-delete-appointments';
+import { createFollowUpsModule } from './features/followups';
 import { createHelloModule } from './features/hello';
 
 // Ein gemeinsamer API-Client für alle Module, damit Throttling und
@@ -20,6 +21,7 @@ const logger = createLogger();
 const modules: PowerToolsModule[] = [
   createHelloModule(api, logger),
   createAppointmentsModule(api, logger),
+  createFollowUpsModule(api),
 ];
 
 const app = mountApp({ version: __APP_VERSION__, modules });

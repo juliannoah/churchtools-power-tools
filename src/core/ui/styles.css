@@ -450,3 +450,19 @@ dl.facts dd {
   overflow-wrap: anywhere;
   font-family: ui-monospace, Consolas, monospace;
 }
+
+ul.candidates {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul.candidates li + li {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+ul.candidates .badge {
+  margin: 2px 4px 0 0;
+}
