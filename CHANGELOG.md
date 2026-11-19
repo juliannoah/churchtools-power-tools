@@ -10,7 +10,9 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 - Neuer Reiter „Followups“ (nur lesen): zeigt die offenen Followups, die
   betroffene Person und mögliche Dubletten (gleiche E-Mail-Adresse oder
-  gleicher Vor- und Nachname).
+  gleicher Vor- und Nachname). Die Liste lässt sich auf einen Personenstatus
+  eingrenzen, und zu einer einzelnen Person lässt sich per ID gezielt nach
+  Dubletten suchen.
 
 ## [0.1.0] – 2026-11-19
 

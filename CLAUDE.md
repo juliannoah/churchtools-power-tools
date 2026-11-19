@@ -135,7 +135,7 @@ Ablauf laut Julian (2026-11-19):
      (`PUT /groups/{groupId}/members/{personId}`). Die Gruppe wird per Name
      gesucht und mit ID zur Bestätigung angezeigt, nicht fest eingebaut.
    - Followup um **7 Tage** verschieben (`POST /followups/{id}/postpone`)
-     und die Notiz „Duplikat erstellen und zur Zusammenführung weitergegeben“
+     und die Notiz „Duplikat erstellt und zur Zusammenführung weitergegeben“
      anlegen (`POST /followups/{id}/notes`). Es bleibt offen.
 3. **Kein Duplikat:** Followup als erledigt markieren
    (`POST /followups/{id}/complete`) und die Person auf Wunsch in eine
@@ -145,7 +145,7 @@ Stufen:
 
 | Stufe | Inhalt | Stand |
 |---|---|---|
-| A | Nur lesen: offene Followups, Person, mögliche Dubletten (gleiche E-Mail oder exakt gleicher Vor- und Nachname) | gebaut, Test auf der Instanz durch Julian offen |
+| A | Nur lesen: offene Followups, Person, mögliche Dubletten (gleiche E-Mail oder exakt gleicher Vor- und Nachname), Filter nach Personenstatus, Einzelprüfung per Personen-ID | gebaut. Auf der Instanz bestätigt (2026-11-19): Followups, Personen und Gruppe werden geladen. Offen: Dublettenerkennung an einem echten Fall (über die Einzelprüfung), Statusfilter |
 | B | Bearbeiten: „Duplikat von …“ / „Kein Duplikat“ mit Vorschau, Protokoll | offen |
 | C | Allgemeine Dublettensuche über alle sichtbaren Personen (Wunsch vom 2026-11-19): Personen seitenweise laden, lokal nach gleichem Namen bzw. gleicher E-Mail gruppieren; Alternative `GET /persons/duplicates` (Beta, Rechte ungeklärt). Aktionen wie in Stufe B. | geplant, nach Stufe B |
 
@@ -160,9 +160,10 @@ Regeln für Stufe B:
 - Mehrere Schreibschritte pro Followup: Bricht einer ab, klar anzeigen, was
   schon geschehen ist und was nicht; nichts stillschweigend wiederholen.
 
-Noch offen: Woran erkennt man die Followups der Selbstregistrierten
-(Titel/Gruppe)? Bis dahin zeigt der Reiter alle offenen Followups mit
-Textfilter.
+Selbstregistrierte erkennt man am **Personenstatus** (in Julians Instanz mit
+dem Kürzel „SR“). Der Reiter bietet dafür eine Auswahl aus `GET /statuses`
+und merkt sich die Wahl im Browser (`localStorage`, nur die Status-ID);
+Kürzel oder ID sind nicht fest eingebaut.
 
 ## Datenschutz
 
