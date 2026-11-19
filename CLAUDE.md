@@ -137,7 +137,7 @@ docs/
 | 0 | Setup, Hello-World-Panel, CLAUDE.md | fertig, auf der Instanz getestet (2026-11-19) |
 | 1 | Nur lesen: API-Client, whoami, Kalender, Termine als Tabelle | gebaut; Termine laden auf der Instanz funktioniert (2026-11-19), Uhrzeiten und ganztägige Termine bestätigt, Serien-Markierung an einer wöchentlichen Testserie bestätigt |
 | 2 | Auswahl: Filter, Checkboxen, Serien markiert | fertig, auf der Instanz getestet (2026-11-19) |
-| 3 | Löschen gemäß Sicherheitsregeln, Protokoll, Export, Rückgängig | gebaut (Einzeltermine und ganze Serien). Auf der Instanz bestätigt (2026-11-19): Trockenlauf, echtes Löschen eines Einzeltermins, JSON-Export. Noch nicht auf der Instanz geprüft: Rückgängig, ganze Serie löschen, Abbrechen. Einzelne Serien-Vorkommen folgen als eigener Schritt |
+| 3 | Löschen gemäß Sicherheitsregeln, Protokoll, Export, Rückgängig | gebaut (Einzeltermine und ganze Serien). Auf der Instanz bestätigt (2026-11-19, laut Protokoll): Trockenlauf, echtes Löschen von Einzelterminen, ganze Serie löschen, Rückgängig (Einzeltermine und Serie), Abbrechen, JSON-Export. Einzelne Serien-Vorkommen folgen als eigener Schritt |
 | 4 | GitHub Action, Release v0.1.0, README fertig | offen |
 
 ## Entscheidungen
@@ -163,13 +163,13 @@ docs/
   nach Pfaden und Schemas suchen (z. B. `/whoami`, `/csrftoken`,
   `/calendars`, `/calendars/{calendarId}/appointments`).
 - CSRF: Der Header-Name `csrf-token` steht nicht in der
-  OpenAPI-Spezifikation (nur `GET /csrftoken`). Ein echtes `DELETE` mit
-  diesem Header war auf der Instanz erfolgreich (2026-11-19); für `POST`
-  (Wiederherstellen) steht die Bestätigung noch aus.
+  OpenAPI-Spezifikation (nur `GET /csrftoken`). `DELETE` und `POST` mit
+  diesem Header waren auf der Instanz erfolgreich (2026-11-19).
 - Einzelne Vorkommen einer Serie löschen: vorher an einer Testserie mit Ort
   und Raumbuchung prüfen, was `PUT` mit nicht mitgeschickten Feldern macht.
-- Wiederherstellen ist noch nicht auf der Instanz geprüft (u. a. ob
-  `onBehalfOfPid` und Tags beim Anlegen angenommen werden).
+- Wiederherstellen ist auf der Instanz nur mit einfachen Terminen geprüft
+  (ohne Ort, Tags, `onBehalfOfPid`, Ausnahmen) – mit solchen Feldern noch
+  testen.
 - Wiederherstellen nach dem Neuladen der Seite (Import des JSON-Protokolls)
   gibt es noch nicht.
 - Das Format von Fehlerantworten (JSON mit `message`?) ist in der
