@@ -127,3 +127,51 @@ export interface AppointmentOccurrence {
   /** Nur mit `include[]=tags`. */
   tags?: { id: number; name: string }[];
 }
+
+/**
+ * GET /followups – ein geplantes Followup zu einer Person, optional an eine
+ * Gruppenmitgliedschaft gebunden.
+ */
+export interface FollowUp {
+  id: number;
+  title: string;
+  description: string | null;
+  /** Person, um die es geht. */
+  personId: number;
+  /** Gruppe bei einem Mitgliedschafts-Followup, sonst null. */
+  groupId: number | null;
+  /** Zuständige Person; null = wird von den Berechtigten der Gruppe bearbeitet. */
+  ownerId: number | null;
+  /** Aktuelles Fälligkeitsdatum (`YYYY-MM-DD`) oder null. */
+  effectiveDueDate: string | null;
+  /** Zeitpunkt der Erledigung; null = offen. */
+  doneDate: string | null;
+  /** Fest vorgegebene Zielgruppe für den Abschluss, falls konfiguriert. */
+  successGroupId: number | null;
+}
+
+/** GET /persons – nur die Felder, die das Skript nutzt. Jedes kann je nach Sichtbarkeit fehlen. */
+export interface Person {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  /** Haupt-E-Mail-Adresse. */
+  email?: string;
+  emails?: { email: string; isDefault: boolean }[];
+  birthday?: string | null;
+  city?: string;
+  isArchived?: boolean;
+  meta?: { createdDate?: string };
+}
+
+/** GET /groups – nur die Felder, die das Skript nutzt. */
+export interface Group {
+  id: number;
+  name: string;
+}
+
+/** Listen mit Seiten (Personen, Gruppen). */
+export interface ApiPagedList<T> {
+  data: T[];
+  meta: { pagination: { current: number; lastPage: number } };
+}
