@@ -1,0 +1,165 @@
+/* Gilt nur innerhalb des Shadow DOM – nichts davon erreicht ChurchTools. */
+:host {
+  all: initial;
+  --bg: #ffffff;
+  --bg-muted: #f3f4f6;
+  --fg: #1f2937;
+  --fg-muted: #6b7280;
+  --border: #d1d5db;
+  --accent: #2563eb;
+  --accent-fg: #ffffff;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :host {
+    --bg: #1f2937;
+    --bg-muted: #111827;
+    --fg: #f3f4f6;
+    --fg-muted: #9ca3af;
+    --border: #374151;
+    --accent: #3b82f6;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.launcher {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483000;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+}
+
+.launcher:focus-visible,
+.close:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2147483001;
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 100vw);
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  box-shadow: -4px 0 16px rgb(0 0 0 / 0.2);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-muted);
+}
+
+.panel-header h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.version {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--fg-muted);
+}
+
+.close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.close:hover {
+  background: var(--border);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--fg-muted);
+}
+
+.tab.active {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+.panel-body h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.panel-body p {
+  margin: 0 0 12px;
+}
+
+dl.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0;
+}
+
+dl.facts dt {
+  color: var(--fg-muted);
+}
+
+dl.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, Consolas, monospace;
+}
