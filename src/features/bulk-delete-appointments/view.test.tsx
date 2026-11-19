@@ -102,6 +102,34 @@ describe('AppointmentsView', () => {
     expect(bar()).toContain('1 davon durch den Filter ausgeblendet');
   });
 
+  it('lädt auf Wunsch über alle Kalender und zeigt dann die Spalte „Kalender“', async () => {
+    const second = { ...calendars.data[0], id: 4, name: 'Zweitkalender', nameTranslated: 'Zweitkalender' };
+    const get = vi.fn(async (path: string) =>
+      path === '/calendars' ? { data: [calendars.data[0], second] } : appointments,
+    ) as unknown as ApiClient['get'];
+    render(<AppointmentsView api={fakeApi(get)} />, container);
+    await settle();
+
+    const select = container.querySelector<HTMLSelectElement>('select');
+    if (!select) throw new Error('Kalender-Auswahl nicht gefunden');
+    expect(select.options[0]?.textContent).toBe('Alle Kalender (2)');
+    select.value = 'all';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    await settle();
+    container.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
+    await settle();
+
+    expect(get).toHaveBeenLastCalledWith(
+      '/calendars/appointments',
+      expect.objectContaining({
+        query: expect.objectContaining({ 'calendar_ids[]': [3, 4] }),
+      }),
+    );
+    const headers = [...container.querySelectorAll('thead th')].map((th) => th.textContent);
+    expect(headers).toContain('Kalender');
+    expect(container.querySelector('tbody')?.textContent).toContain('Testkalender');
+  });
+
   it('zeigt fehlende Berechtigung verständlich an', async () => {
     const get = (async () => {
       throw new ApiError('forbidden', 'Dafür fehlt dir in ChurchTools die Berechtigung.', 403);

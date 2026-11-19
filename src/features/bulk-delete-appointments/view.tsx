@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { listAppointments } from '../../api/appointments';
+import { listAppointments, listAppointmentsOfCalendars } from '../../api/appointments';
 import { listCalendars } from '../../api/calendars';
 import type { Calendar } from '../../api/types';
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
@@ -30,9 +30,15 @@ interface LoadedAppointments {
   /** Zählt die Abfragen, damit Filter und Auswahl bei jedem Laden neu starten. */
   loadId: number;
   rows: AppointmentRow[];
-  calendarName: string;
+  /** Woraus geladen wurde, passend zu „Termine in …“. */
+  scope: string;
+  /** Spalte „Kalender“ zeigen (bei der Abfrage über alle Kalender). */
+  showCalendar: boolean;
   range: DateRange;
 }
+
+/** Wert der Kalender-Auswahl für „alle Kalender“. */
+const ALL_CALENDARS = 'all';
 
 const CALENDAR_TYPE_LABEL: Record<Calendar['type'], string> = {
   church: 'Gemeindekalender',
@@ -46,7 +52,7 @@ const CALENDAR_TYPE_LABEL: Record<Calendar['type'], string> = {
  */
 export function AppointmentsView({ api }: { api: ApiClient }) {
   const [calendars, setCalendars] = useState<Loadable<Calendar[]>>({ status: 'loading' });
-  const [calendarId, setCalendarId] = useState<number | undefined>();
+  const [calendarId, setCalendarId] = useState<number | typeof ALL_CALENDARS | undefined>();
   const [range, setRange] = useState<DateRange>(() => defaultRange(new Date()));
   const [appointments, setAppointments] = useState<Loadable<LoadedAppointments>>({
     status: 'idle',
@@ -75,15 +81,28 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
 
   const rangeError = validateRange(range);
   const calendarList = calendars.status === 'ready' ? calendars.value : [];
-  const selected = calendarList.find((c) => c.id === calendarId);
+  const allCalendars = calendarId === ALL_CALENDARS;
+  const selected = allCalendars ? undefined : calendarList.find((c) => c.id === calendarId);
+  const canLoad = (allCalendars && calendarList.length > 0) || selected !== undefined;
 
   const load = (): void => {
-    if (!selected || rangeError) return;
+    if (!canLoad || rangeError) return;
     pending.current?.abort();
     const controller = new AbortController();
     pending.current = controller;
     setAppointments({ status: 'loading' });
-    listAppointments(api, selected.id, range, controller.signal)
+    const request = selected
+      ? listAppointments(api, selected.id, range, controller.signal)
+      : listAppointmentsOfCalendars(
+          api,
+          calendarList.map((calendar) => calendar.id),
+          range,
+          controller.signal,
+        );
+    const scope = selected
+      ? `„${calendarLabel(selected)}“`
+      : `allen ${calendarList.length} Kalendern`;
+    request
       .then((occurrences) => {
         if (controller.signal.aborted) return;
         setAppointments({
@@ -91,7 +110,8 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
           value: {
             loadId: ++loadCounter.current,
             rows: toRows(occurrences),
-            calendarName: calendarLabel(selected),
+            scope,
+            showCalendar: !selected,
             range,
           },
         });
@@ -131,8 +151,14 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
           Kalender
           <select
             value={calendarId}
-            onChange={(event) => setCalendarId(Number(event.currentTarget.value))}
+            onChange={(event) => {
+              const value = event.currentTarget.value;
+              setCalendarId(value === ALL_CALENDARS ? ALL_CALENDARS : Number(value));
+            }}
           >
+            {calendarList.length > 1 && (
+              <option value={ALL_CALENDARS}>Alle Kalender ({calendarList.length})</option>
+            )}
             {calendarList.map((calendar) => (
               <option key={calendar.id} value={calendar.id}>
                 {calendarLabel(calendar)} ({CALENDAR_TYPE_LABEL[calendar.type] ?? calendar.type})
@@ -159,7 +185,7 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
         <button
           type="submit"
           class="primary"
-          disabled={!selected || rangeError !== null || appointments.status === 'loading'}
+          disabled={!canLoad || rangeError !== null || appointments.status === 'loading'}
         >
           Termine laden
         </button>
@@ -197,11 +223,11 @@ const KIND_LABEL: Record<KindFilter, string> = {
   series: 'Nur Serientermine',
 };
 
-function AppointmentTable({ rows, calendarName, range }: LoadedAppointments) {
+function AppointmentTable({ rows, scope, showCalendar, range }: LoadedAppointments) {
   const [filter, setFilter] = useState<RowFilter>(NO_FILTER);
   const [selection, setSelection] = useState<Selection>(() => new Set<string>());
 
-  const summary = `${rows.length} ${rows.length === 1 ? 'Termin' : 'Termine'} in „${calendarName}“ (${range.from} bis ${range.to})`;
+  const summary = `${rows.length} ${rows.length === 1 ? 'Termin' : 'Termine'} in ${scope} (${range.from} bis ${range.to})`;
   if (rows.length === 0) return <p class="notice">{summary}.</p>;
 
   const visible = filterRows(rows, filter);
@@ -284,6 +310,7 @@ function AppointmentTable({ rows, calendarName, range }: LoadedAppointments) {
               </th>
               <th>Datum</th>
               <th>Titel</th>
+              {showCalendar && <th>Kalender</th>}
               <th>Serie</th>
               <th class="num">ID</th>
             </tr>
@@ -310,7 +337,8 @@ function AppointmentTable({ rows, calendarName, range }: LoadedAppointments) {
                     {row.title}
                     {row.subtitle && <div class="muted">{row.subtitle}</div>}
                   </td>
-                  <td>{row.isSeries && <span class="badge">Serie: {row.repeatLabel}</span>}</td>
+                  {showCalendar && <td>{row.calendarName}</td>}
+                  <td>{row.isSeries &&<span class="badge">Serie: {row.repeatLabel}</span>}</td>
                   <td class="num">{row.appointmentId}</td>
                 </tr>
               );

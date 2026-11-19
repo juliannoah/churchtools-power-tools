@@ -24,3 +24,20 @@ export async function listAppointments(
   );
   return result.data;
 }
+
+/**
+ * Wie `listAppointments`, aber über mehrere Kalender in einer Abfrage. Der
+ * Server prüft den Zugriff für jeden angegebenen Kalender.
+ */
+export async function listAppointmentsOfCalendars(
+  api: ApiClient,
+  calendarIds: readonly number[],
+  range: AppointmentRange,
+  signal?: AbortSignal,
+): Promise<AppointmentOccurrence[]> {
+  const result = await api.get<ApiList<AppointmentOccurrence>>('/calendars/appointments', {
+    query: { 'calendar_ids[]': calendarIds, from: range.from, to: range.to },
+    signal,
+  });
+  return result.data;
+}

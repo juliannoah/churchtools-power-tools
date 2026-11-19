@@ -8,6 +8,7 @@ export interface AppointmentRow {
   appointmentId: number;
   title: string;
   subtitle: string | null;
+  calendarId: number;
   calendarName: string;
   allDay: boolean;
   /** Ganztägig: `YYYY-MM-DD`, sonst UTC-Zeitstempel. */
@@ -62,6 +63,7 @@ export function toRows(occurrences: readonly AppointmentOccurrence[]): Appointme
       appointmentId: base.id,
       title: base.title,
       subtitle: base.subtitle,
+      calendarId: base.calendar.id,
       calendarName: base.calendar.nameTranslated || base.calendar.name,
       allDay: base.allDay,
       start: calculated.startDate,
