@@ -248,6 +248,7 @@ Kürzel oder ID sind nicht fest eingebaut.
 | 1 | Nur lesen: API-Client, whoami, Kalender, Termine als Tabelle | gebaut; Termine laden auf der Instanz funktioniert (2026-11-19), Uhrzeiten und ganztägige Termine bestätigt, Serien-Markierung an einer wöchentlichen Testserie bestätigt |
 | 2 | Auswahl: Filter, Checkboxen, Serien markiert | fertig, auf der Instanz getestet (2026-11-19) |
 | 3 | Löschen gemäß Sicherheitsregeln, Protokoll, Export, Rückgängig | gebaut (Einzeltermine und ganze Serien). Auf der Instanz bestätigt (2026-11-19, laut Protokoll): Trockenlauf, echtes Löschen von Einzelterminen, ganze Serie löschen, Rückgängig (Einzeltermine und Serie), Abbrechen, JSON-Export. Einzelne Serien-Vorkommen folgen als eigener Schritt |
+| 5 | Followups und Dubletten (siehe „Modul Followups“), Release v0.2.0 am 2026-11-19 | veröffentlicht; offene Punkte siehe „Offene Tests auf der Instanz“ |
 | 4 | GitHub Action, Release v0.1.0, README fertig | fertig, v0.1.0 am 2026-11-19 veröffentlicht: `.github/workflows/ci.yml` (main, PRs) und `release.yml` (Tag `v*`) |
 
 ## Entscheidungen

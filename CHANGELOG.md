@@ -6,6 +6,8 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [0.2.0] – 2026-11-19
+
 ### Hinzugefügt
 
 - Neuer Reiter „Followups“: zeigt die offenen Followups, die betroffene
@@ -20,6 +22,8 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
   Vorab werden alle Schritte angezeigt; Standard ist ein Trockenlauf.
 - Das Protokoll enthält zu Personen und Followups nur IDs, keine Namen.
 - Testversionen (lokal gebaut) sind im Panel als „Testversion“ gekennzeichnet.
+- Kennzeichen wie „Serie: …“ sind jetzt abgerundete Rechtecke, damit
+  mehrzeiliger Text nicht an den Rand stößt.
 - Neuer Reiter „Dubletten“: prüft alle sichtbaren Personen auf gleichen Vor-
   und Nachnamen oder gleiche E-Mail-Adresse. Über „Duplikat zusammenführen …“
   wählt man den Hauptaccount; die übrigen werden als dessen Duplikat
