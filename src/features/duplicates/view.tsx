@@ -38,8 +38,8 @@ export function DuplicatesView({ api, logger }: { api: ApiClient; logger: Logger
   const [merging, setMerging] = useState<string | null>(null);
   /** In dieser Sitzung zur Zusammenführung weitergegebene Gruppen. */
   const [handedOver, setHandedOver] = useState<ReadonlySet<string>>(new Set());
-  // Vorgabe „Gleicher Name“: Geteilte E-Mail-Adressen sind meist Familien.
-  const [filter, setFilter] = useState<GroupFilter>({ kind: 'name', text: '', statusId: null });
+  // Vorgabe „Alle“. Gruppen mit nur gleicher E-Mail stehen am Ende der Liste.
+  const [filter, setFilter] = useState<GroupFilter>({ kind: 'all', text: '', statusId: null });
   const pending = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
 

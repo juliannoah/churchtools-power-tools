@@ -80,8 +80,8 @@ export function findDuplicateGroups(persons: readonly Person[]): DuplicateGroup[
 export type KindFilter = 'all' | 'name' | 'email';
 
 export const KIND_FILTER_LABEL: Record<KindFilter, string> = {
-  name: 'Gleicher Name',
   all: 'Alle',
+  name: 'Gleicher Name',
   email: 'Nur gleiche E-Mail',
 };
 
