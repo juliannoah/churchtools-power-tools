@@ -61,7 +61,7 @@ src/
     hello/              Platzhalter-Modul aus Phase 0
     bulk-delete-appointments/   (Phase 2/3) index.ts, view.ts, logic.ts
 docs/
-  openapi.json          OpenAPI-Spezifikation der Instanz (legt Julian ab)
+  openapi.json          OpenAPI-Spezifikation der Instanz (nicht eingecheckt, Bezug: docs/README.md)
 ```
 
 - **Neues Modul:** Ordner unter `src/features/<name>/`, exportiert ein
@@ -132,7 +132,9 @@ docs/
 
 ## Offene Punkte
 
-- `docs/openapi.json` fehlt noch (Voraussetzung für Phase 1).
+- `docs/openapi.json` ist ca. 40 MB groß: nie komplett lesen, sondern gezielt
+  nach Pfaden und Schemas suchen (z. B. `/whoami`, `/csrftoken`,
+  `/calendars`, `/calendars/{calendarId}/appointments`).
 - Lizenz für das öffentliche Repo ist noch nicht festgelegt.
 - Navigationswechsel über `history.pushState` (ohne Hash) werden bisher nicht
   erkannt – nur `hashchange`/`popstate`. Prüfen, ob ChurchTools das nutzt.
