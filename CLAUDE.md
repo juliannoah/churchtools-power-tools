@@ -53,19 +53,21 @@ src/
   core/
     module.ts           Vertrag für Module (PowerToolsModule: id, title, View)
     route.ts            Route der SPA + Benachrichtigung bei Navigationswechsel
-    api-client.ts       (Phase 1) fetch-Wrapper: Session, CSRF, Fehler, Retry, Throttling
+    api-client.ts       fetch-Wrapper: Session, CSRF, Fehler (ApiError), Retry, Throttling
     logger.ts           (Phase 3) Protokoll der Aktionen, exportierbar
     ui/                 gemeinsame UI-Bausteine (mount, App/Panel, später Tabelle, Dialoge)
-  api/                  (Phase 1) calendars.ts, appointments.ts, types.ts
+  api/                  whoami.ts, calendars.ts, appointments.ts, types.ts
   features/
-    hello/              Platzhalter-Modul aus Phase 0
-    bulk-delete-appointments/   (Phase 2/3) index.ts, view.ts, logic.ts
+    hello/              Reiter „Start“: Instanz, angemeldete Person, Route
+    bulk-delete-appointments/   Reiter „Termine“: index.tsx, view.tsx, logic.ts
+                                (Phase 1 nur lesen; Auswahl/Löschen in Phase 2/3)
 docs/
   openapi.json          OpenAPI-Spezifikation der Instanz (nicht eingecheckt, Bezug: docs/README.md)
 ```
 
 - **Neues Modul:** Ordner unter `src/features/<name>/`, exportiert ein
-  `PowerToolsModule`, Eintrag in der Liste in `main.ts`. Module enthalten
+  `PowerToolsModule` (als Fabrik `create…Module(api)`, die den gemeinsamen
+  API-Client aus `main.ts` bekommt), Eintrag in der Liste in `main.ts`. Module enthalten
   keine eigenen `fetch`-Aufrufe, sondern nutzen `src/api/` und den
   API-Client.
 - Logik (`logic.ts`) von der Darstellung (`view`) trennen, damit sie ohne
@@ -79,7 +81,16 @@ docs/
 - CSRF für schreibende Requests (`/api/csrftoken`, Header `csrf-token`)
   prüfen und **zentral im API-Client** einbauen, nicht in den Features.
 - Requests sequenziell oder mit kleiner Parallelität (max. 2–3) und kurzer
-  Pause. Bei 429/5xx mit Backoff erneut versuchen.
+  Pause. Bei 429/5xx mit Backoff erneut versuchen. Der API-Client schickt
+  alles sequenziell; 5xx/Netzwerkfehler werden **nur bei GET** wiederholt
+  (bei schreibenden Requests wäre unklar, ob die Aktion schon ausgeführt
+  wurde), 429 immer.
+- Termine: `GET /calendars/{calendarId}/appointments?from&to` liefert **einen
+  Eintrag pro Vorkommen** (Serien aufgelöst, kein Blättern).
+  `appointment.base` ist der gespeicherte Termin bzw. die ganze Serie
+  (`base.id`, `repeatId` ≠ 0 = Serie), `appointment.calculated` das einzelne
+  Vorkommen. Ganztägig: `YYYY-MM-DD` (Ende einschließlich), sonst
+  UTC-Zeitstempel.
 
 ## Sicherheitsregeln für Löschfunktionen (nicht verhandelbar)
 
@@ -117,7 +128,7 @@ docs/
 | Phase | Inhalt | Stand |
 |---|---|---|
 | 0 | Setup, Hello-World-Panel, CLAUDE.md | gebaut, Test auf der Instanz durch Julian offen |
-| 1 | Nur lesen: API-Client, whoami, Kalender, Termine als Tabelle | offen |
+| 1 | Nur lesen: API-Client, whoami, Kalender, Termine als Tabelle | gebaut, Test auf der Instanz durch Julian offen |
 | 2 | Auswahl: Filter, Checkboxen, Serien markiert | offen |
 | 3 | Löschen gemäß Sicherheitsregeln, Protokoll, Export | offen |
 | 4 | GitHub Action, Release v0.1.0, README fertig | offen |
@@ -129,12 +140,21 @@ docs/
 | 2026-11-19 | UI mit **Preact** statt Vanilla TS: Tabelle, Filter, Auswahl und Fortschritt sind zustandslastig; Preact kostet nur wenige KB. |
 | 2026-11-19 | Startknopf unten rechts **und** Menü-Eintrag im Userscript-Manager (`GM_registerMenuCommand`, einziger Grant). |
 | 2026-11-19 | Der Instanzname steht nicht im Repo (öffentlich, läuft auf jeder Instanz). |
+| 2026-11-19 | Termine werden **pro Kalender** geladen (`/calendars/{calendarId}/appointments`), Zeitraum höchstens 366 Tage, Vorbelegung heute + 90 Tage. |
+| 2026-11-19 | Uhrzeiten werden in der Zeitzone des Browsers angezeigt (Annahme: entspricht der Zeitzone der Installation). |
 
 ## Offene Punkte
 
 - `docs/openapi.json` ist ca. 40 MB groß: nie komplett lesen, sondern gezielt
   nach Pfaden und Schemas suchen (z. B. `/whoami`, `/csrftoken`,
   `/calendars`, `/calendars/{calendarId}/appointments`).
-- Lizenz für das öffentliche Repo ist noch nicht festgelegt.
+- Lizenz: MIT ist entschieden; `LICENSE` fehlt noch, weil der Name des
+  Urhebers für den Copyright-Vermerk offen ist.
+- CSRF: Der Header-Name `csrf-token` steht **nicht** in der
+  OpenAPI-Spezifikation (nur `GET /csrftoken`). Der API-Client setzt ihn bei
+  schreibenden Requests; vor Phase 3 an einem echten Request von ChurchTools
+  (DevTools, Netzwerk-Reiter) prüfen.
+- Das Format von Fehlerantworten (JSON mit `message`?) ist in der
+  Spezifikation nicht festgelegt; der Client liest es defensiv.
 - Navigationswechsel über `history.pushState` (ohne Hash) werden bisher nicht
   erkannt – nur `hashchange`/`popstate`. Prüfen, ob ChurchTools das nutzt.

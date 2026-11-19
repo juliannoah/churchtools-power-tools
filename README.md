@@ -4,9 +4,10 @@ Ein Userscript für [Tampermonkey](https://www.tampermonkey.net/) und
 [Violentmonkey](https://violentmonkey.github.io/), das die Verwaltung in
 ChurchTools vereinfacht.
 
-> **Stand:** in Entwicklung. Bisher gibt es nur das Grundgerüst (Startknopf
-> und Panel). Die erste Funktion – mehrere Termine eines Kalenders auf einmal
-> auswählen und löschen – folgt. Es gibt noch kein Release.
+> **Stand:** in Entwicklung. Bisher kann das Skript die Termine eines
+> Kalenders für einen Zeitraum als Tabelle anzeigen (nur lesen). Die erste
+> eigentliche Funktion – mehrere Termine eines Kalenders auf einmal auswählen
+> und löschen – folgt. Es gibt noch kein Release.
 
 ## Wichtig zu wissen
 
