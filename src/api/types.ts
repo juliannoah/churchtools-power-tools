@@ -183,5 +183,5 @@ export interface Group {
 /** Listen mit Seiten (Personen, Gruppen). */
 export interface ApiPagedList<T> {
   data: T[];
-  meta: { pagination: { current: number; lastPage: number } };
+  meta: { pagination: { current: number; lastPage: number; total?: number } };
 }

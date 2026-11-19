@@ -5,6 +5,7 @@ import { mountApp } from './core/ui/mount';
 import { createApiClient } from './core/api-client';
 import { createLogger } from './core/logger';
 import { createAppointmentsModule } from './features/bulk-delete-appointments';
+import { createDuplicatesModule } from './features/duplicates';
 import { createFollowUpsModule } from './features/followups';
 import { createHelloModule } from './features/hello';
 
@@ -22,6 +23,7 @@ const modules: PowerToolsModule[] = [
   createHelloModule(api, logger),
   createAppointmentsModule(api, logger),
   createFollowUpsModule(api),
+  createDuplicatesModule(api),
 ];
 
 const app = mountApp({ version: __APP_VERSION__, modules });
