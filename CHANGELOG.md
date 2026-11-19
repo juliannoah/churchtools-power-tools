@@ -19,8 +19,15 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
   auf Wunsch in eine Gruppe auf und markiert das Followup als erledigt.
   Vorab werden alle Schritte angezeigt; Standard ist ein Trockenlauf.
 - Das Protokoll enthält zu Personen und Followups nur IDs, keine Namen.
+- Testversionen (lokal gebaut) sind im Panel als „Testversion“ gekennzeichnet.
 - Neuer Reiter „Dubletten“ (nur lesen): prüft alle sichtbaren Personen auf
   gleichen Vor- und Nachnamen oder gleiche E-Mail-Adresse.
+
+### Geändert
+
+- Der Trockenlauf steht nur noch in Testversionen zur Verfügung. Im Release
+  wird nach der Vorschau direkt ausgeführt; beim Löschen von Terminen bleibt
+  das Eintippen der Anzahl als Bestätigung.
 
 ## [0.1.0] – 2026-11-19
 

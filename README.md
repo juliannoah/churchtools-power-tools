@@ -3,7 +3,7 @@
 Ein Userscript für [Tampermonkey](https://www.tampermonkey.net/) und
 [Violentmonkey](https://violentmonkey.github.io/), das die Verwaltung in
 ChurchTools vereinfacht. Erste Funktion: **mehrere Termine auf einmal
-auswählen und löschen** – mit Vorschau, Trockenlauf, Protokoll und
+auswählen und löschen** – mit Vorschau, Bestätigung, Protokoll und
 „Rückgängig machen“.
 
 Dies ist ein privates Projekt und steht in keiner Verbindung zum Hersteller
@@ -31,10 +31,9 @@ Das Skript läuft nur auf Adressen der Form `https://<name>.church.tools`.
    366 Tagen wählen, dann „Termine laden“.
 3. Bei Bedarf filtern (Titel, nur Einzeltermine, nur Serientermine) und die
    gewünschten Termine anhaken.
-4. „Löschen … (Vorschau)“ zeigt, was gelöscht würde. Voreingestellt ist der
-   **Trockenlauf**: Er spielt alles durch, löscht aber nichts.
-5. Zum echten Löschen auf „Echt löschen“ umschalten und zur Bestätigung die
-   angezeigte Anzahl eintippen.
+4. „Löschen … (Vorschau)“ zeigt, was gelöscht würde.
+5. Zum Löschen die angezeigte Anzahl zur Bestätigung eintippen. Erst dann
+   wird der Löschknopf aktiv.
 6. Nach dem Lauf zeigt die Zusammenfassung, was gelöscht wurde und was nicht.
    Dort lässt sich das Protokoll speichern und das Löschen rückgängig machen.
 
@@ -53,8 +52,8 @@ Termine oder die Auswahl verloren gehen.
   nicht löschen; sie werden übersprungen. Eine Serie wird nur als Ganzes
   gelöscht – mit allen Vorkommen, auch außerhalb des geladenen Zeitraums –
   und nur, wenn du das in der Vorschau ausdrücklich anhakst.
-- **Protokoll:** Jede Löschung, jeder Trockenlauf und jedes Wiederherstellen
-  wird protokolliert. Das Protokoll lässt sich als CSV oder JSON speichern
+- **Protokoll:** Jede Löschung und jedes Wiederherstellen wird
+  protokolliert. Das Protokoll lässt sich als CSV oder JSON speichern
   (in der Zusammenfassung und im Reiter „Start“). Es liegt nur im
   Arbeitsspeicher und ist nach dem Neuladen der Seite weg – speichere es
   also, bevor du die Seite verlässt. Die Datei enthält Titel und Zeiten
@@ -88,7 +87,10 @@ npm run preview    # liefert das gebaute Skript lokal zur Installation aus
 ```
 
 Zum Ausprobieren das gebaute Skript im Userscript-Manager installieren und
-eine ChurchTools-Instanz öffnen. Aufbau und Regeln des Projekts stehen in
+eine ChurchTools-Instanz öffnen. Lokal gebaute Skripte sind
+**Testversionen**: Sie sind im Panel so gekennzeichnet und bieten zusätzlich
+einen Trockenlauf, der alles durchspielt, aber nichts ändert. Das
+veröffentlichte Release enthält ihn nicht. Aufbau und Regeln des Projekts stehen in
 [CLAUDE.md](CLAUDE.md), der Bezug der API-Beschreibung in
 [docs/README.md](docs/README.md).
 

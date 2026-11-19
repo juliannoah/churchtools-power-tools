@@ -30,6 +30,13 @@ Verteilung über GitHub-Releases (`juliannoah/churchtools-power-tools`,
 - Phase für Phase arbeiten; nach jeder Phase kurze Zusammenfassung (was
   gebaut, wie testen) und auf das OK warten.
 - Annahmen ausdrücklich nennen. Bei Unklarheiten nachfragen statt raten.
+- **Testversion und Release:** Lokale Builds (`npm run build`,
+  `npm run preview`) und die Tests sind Testversionen
+  (`__TEST_BUILD__ = true`, Kennzeichen „Testversion“ im Panel,
+  Trockenlauf-Option vorhanden). Nur der Release-Workflow baut mit
+  `RELEASE_BUILD=true` ohne Trockenlauf. Abfrage im Code über
+  `isTestBuild()` aus `core/build.ts`; das Release-Verhalten prüft
+  `src/features/release-build.test.tsx`.
 - Semantic Versioning; `CHANGELOG.md` auf Deutsch pflegen. Die Version steht
   nur in `package.json` (daraus entstehen `@version` und die Anzeige im Panel).
 - Commits in diesem Repo laufen über die GitHub-noreply-Adresse (lokale
@@ -107,8 +114,12 @@ docs/
 
 ## Sicherheitsregeln für Löschfunktionen (nicht verhandelbar)
 
-1. Standard ist ein **Trockenlauf**: Es wird nur angezeigt, was gelöscht
-   WÜRDE.
+1. Der **Trockenlauf** (nur anzeigen, was gelöscht WÜRDE) ist in
+   **Testversionen** die Vorgabe. Im **Release** gibt es ihn nicht – von
+   Julian am 2026-11-19 so entschieden, nachdem Löschen und Rückgängig auf
+   der Instanz bestätigt waren. Die Regeln 2–5 gelten in beiden Fällen
+   unverändert; die Vorschau und das Eintippen der Anzahl dürfen im Release
+   nicht entfallen.
 2. Vor dem echten Löschen: Vorschau-Liste mit Anzahl, Titel, Datum, Kalender
    und eine Bestätigung, bei der der Nutzer **die Anzahl eintippen** muss.
 3. Terminserien: klar unterscheiden zwischen „nur dieses Vorkommen“ und
@@ -153,7 +164,7 @@ Stufen:
 | Stufe | Inhalt | Stand |
 |---|---|---|
 | A | Nur lesen: offene Followups, Person, mögliche Dubletten (gleiche E-Mail oder exakt gleicher Vor- und Nachname), Filter nach Personenstatus, Einzelprüfung per Personen-ID | gebaut. Auf der Instanz bestätigt (2026-11-19): Followups, Personen und Gruppe werden geladen. Offen: Dublettenerkennung an einem echten Fall (über die Einzelprüfung), Statusfilter |
-| B | Bearbeiten: „Duplikat …“ / „Kein Duplikat …“ je Followup mit Vorschau der Schritte, Trockenlauf als Vorgabe, Protokoll nur mit IDs | gebaut (`actions.ts`, `action-view.tsx`). Auf der Instanz bisher nur Trockenläufe „Kein Duplikat“ (2026-11-19: mit vorgeschlagener Gruppe, mit gesuchter Gruppe und ohne Gruppe – Schritte stimmen); **echte Ausführung noch nicht gelaufen** – erster echter Lauf nur mit zwei Testpersonen |
+| B | Bearbeiten: „Duplikat …“ / „Kein Duplikat …“ je Followup mit Vorschau der Schritte, Trockenlauf als Vorgabe, Protokoll nur mit IDs | gebaut (`actions.ts`, `action-view.tsx`). Auf der Instanz bisher nur Trockenläufe „Kein Duplikat“ (2026-11-19: mit vorgeschlagener Gruppe, mit gesuchter Gruppe und ohne Gruppe – Schritte stimmen) und ein echter Lauf „Kein Duplikat“ ohne Gruppe (Followup als erledigt markiert). **Noch nicht echt gelaufen:** Aufnahme in eine Gruppe und der gesamte Duplikat-Fall – diesen zuerst nur mit zwei Testpersonen |
 | C | Allgemeine Dublettensuche über alle sichtbaren Personen (Wunsch vom 2026-11-19): Personen seitenweise laden, lokal nach gleichem Namen bzw. gleicher E-Mail gruppieren; Alternative `GET /persons/duplicates` (Beta, Rechte ungeklärt). Aktionen wie in Stufe B. | Suche gebaut (Reiter „Dubletten“, nur lesen, eigene Gruppierung im Browser). Auf der Instanz gelaufen (2026-11-19): gut 1000 Personen, 5 Gruppen, ca. 8 Sekunden. Offen: ob alle erwarteten Personen dabei sind (Sichtbarkeit, Archiv); Aktionen folgen mit Stufe B |
 
 So ist Stufe B umgesetzt:
@@ -175,6 +186,8 @@ So ist Stufe B umgesetzt:
 
 Regeln für Stufe B:
 
+- Trockenlauf wie bei den Terminen nur in Testversionen; im Release wird
+  nach der Vorschau der Schritte direkt ausgeführt.
 - Vor jeder Änderung eine Vorschau, was mit welcher Person-ID geschieht;
   erster Versuch nur mit zwei Testpersonen.
 - Richtung der Beziehung (wer ist „Original“, wer „Duplikat“) in der Vorschau
