@@ -69,10 +69,12 @@ export function findDuplicateGroups(persons: readonly Person[]): DuplicateGroup[
     groups.push({ key: `email:${email}`, kind: 'email', persons: sortById(members) });
   }
 
+  // Alphabetisch nach Nachname, dann Vorname (der ersten Person der Gruppe).
+  // Bei gleichem Namen steht der stärkere Grund zuerst.
   return groups.sort(
     (a, b) =>
-      KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) ||
       sortName(a).localeCompare(sortName(b), 'de') ||
+      KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) ||
       (a.persons[0]?.id ?? 0) - (b.persons[0]?.id ?? 0),
   );
 }

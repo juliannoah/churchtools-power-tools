@@ -76,17 +76,37 @@ describe('findDuplicateGroups', () => {
     expect(findDuplicateGroups([{ id: 1 }, { id: 2 }, p(3, 'Erika', ''), p(4, 'Erika', '')])).toEqual([]);
   });
 
-  it('sortiert: Name und E-Mail zuerst, dann Name, dann nur E-Mail', () => {
+  it('sortiert alphabetisch nach Nachname, dann Vorname', () => {
     const groups = findDuplicateGroups([
       p(1, 'A', 'Zeta', 'geteilt@example.org'),
       p(2, 'B', 'Zeta', 'geteilt@example.org'),
       p(3, 'Max', 'Muster'),
       p(4, 'Max', 'Muster'),
-      p(5, 'Erika', 'Beispiel', 'e@example.org'),
-      p(6, 'Erika', 'Beispiel', 'e@example.org'),
+      p(5, 'Erika', 'Öhler'),
+      p(6, 'Erika', 'Öhler'),
+      p(7, 'Erika', 'Beispiel', 'e@example.org'),
+      p(8, 'Erika', 'Beispiel', 'e@example.org'),
+      p(9, 'Anna', 'Muster'),
+      p(10, 'Anna', 'Muster'),
     ]);
 
-    expect(groups.map((group) => group.kind)).toEqual(['name-email', 'name', 'email']);
+    expect(groups.map((group) => `${group.persons[0]?.lastName}, ${group.persons[0]?.firstName}`)).toEqual([
+      'Beispiel, Erika',
+      'Muster, Anna',
+      'Muster, Max',
+      'Öhler, Erika',
+      'Zeta, A',
+    ]);
+  });
+
+  it('stellt bei gleichem Namen den stärkeren Grund voran', () => {
+    const groups = findDuplicateGroups([
+      p(1, 'Erika', 'Beispiel'),
+      p(2, 'Erika', 'Beispiel', 'geteilt@example.org'),
+      p(3, 'Max', 'Muster', 'geteilt@example.org'),
+    ]);
+
+    expect(groups.map((group) => group.kind)).toEqual(['name', 'email']);
   });
 });
 
