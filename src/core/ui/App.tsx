@@ -18,6 +18,11 @@ export function App({ version, modules, open, onOpenChange }: AppProps) {
   const [everOpened, setEverOpened] = useState(open);
   if (open && !everOpened) setEverOpened(true);
 
+  // Dasselbe gilt für die Reiter: Ein einmal geöffnetes Modul bleibt beim
+  // Wechsel bestehen (wichtig z. B. während eines laufenden Löschvorgangs).
+  const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set());
+  if (active && !visited.has(active.id)) setVisited(new Set([...visited, active.id]));
+
   return (
     <>
       <button
@@ -59,9 +64,18 @@ export function App({ version, modules, open, onOpenChange }: AppProps) {
               ))}
             </nav>
           )}
-          <div class="panel-body">
-            {active ? <active.View /> : <p>Keine Module registriert.</p>}
-          </div>
+          {modules.length === 0 && (
+            <div class="panel-body">
+              <p>Keine Module registriert.</p>
+            </div>
+          )}
+          {modules
+            .filter((m) => visited.has(m.id) || m.id === active?.id)
+            .map((m) => (
+              <div class="panel-body" key={m.id} hidden={m.id !== active?.id}>
+                <m.View />
+              </div>
+            ))}
         </section>
       )}
     </>
