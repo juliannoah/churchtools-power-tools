@@ -2,12 +2,44 @@
 
 Ein Userscript für [Tampermonkey](https://www.tampermonkey.net/) und
 [Violentmonkey](https://violentmonkey.github.io/), das die Verwaltung in
-ChurchTools vereinfacht.
+ChurchTools vereinfacht. Erste Funktion: **mehrere Termine auf einmal
+auswählen und löschen** – mit Vorschau, Trockenlauf, Protokoll und
+„Rückgängig machen“.
 
-> **Stand:** in Entwicklung, noch kein Release. Das Skript kann die Termine
-> eines oder aller Kalender für einen Zeitraum anzeigen, filtern, auswählen
-> und nach Vorschau und Bestätigung löschen. Einzelne Vorkommen einer
-> Terminserie lassen sich noch nicht löschen.
+Dies ist ein privates Projekt und steht in keiner Verbindung zum Hersteller
+von ChurchTools.
+
+## Installation
+
+1. Im Browser [Tampermonkey](https://www.tampermonkey.net/) oder
+   [Violentmonkey](https://violentmonkey.github.io/) installieren.
+2. Diesen Link öffnen und die Installation bestätigen:
+   **[churchtools-power-tools.user.js](https://github.com/juliannoah/churchtools-power-tools/releases/latest/download/churchtools-power-tools.user.js)**
+3. Die eigene ChurchTools-Seite (`https://<name>.church.tools`) neu laden.
+   Unten rechts erscheint der Knopf „Power-Tools“.
+
+Updates holt der Userscript-Manager automatisch vom jeweils neuesten
+[Release](https://github.com/juliannoah/churchtools-power-tools/releases).
+Was sich geändert hat, steht im [Changelog](CHANGELOG.md).
+
+Das Skript läuft nur auf Adressen der Form `https://<name>.church.tools`.
+
+## Termine löschen – so geht es
+
+1. „Power-Tools“ öffnen, Reiter **Termine**.
+2. Einen Kalender (oder „Alle Kalender“) und einen Zeitraum von höchstens
+   366 Tagen wählen, dann „Termine laden“.
+3. Bei Bedarf filtern (Titel, nur Einzeltermine, nur Serientermine) und die
+   gewünschten Termine anhaken.
+4. „Löschen … (Vorschau)“ zeigt, was gelöscht würde. Voreingestellt ist der
+   **Trockenlauf**: Er spielt alles durch, löscht aber nichts.
+5. Zum echten Löschen auf „Echt löschen“ umschalten und zur Bestätigung die
+   angezeigte Anzahl eintippen.
+6. Nach dem Lauf zeigt die Zusammenfassung, was gelöscht wurde und was nicht.
+   Dort lässt sich das Protokoll speichern und das Löschen rückgängig machen.
+
+Mit „»“ oben rechts lässt sich das Fenster einklappen, ohne dass geladene
+Termine oder die Auswahl verloren gehen.
 
 ## Wichtig zu wissen
 
@@ -17,16 +49,31 @@ ChurchTools vereinfacht.
 - **Datenschutz:** Das Skript spricht ausschließlich mit der
   ChurchTools-Instanz, auf der es läuft. Es werden keine Daten an andere
   Dienste gesendet.
-- **Trockenlauf:** Löschfunktionen zeigen standardmäßig nur an, was gelöscht
-  *würde*. Echtes Löschen braucht eine ausdrückliche Bestätigung, bei der du
-  die Anzahl eintippst.
-- **Terminserien:** Wird eine Serie gelöscht, dann immer als Ganzes – und
-  nur, wenn du das ausdrücklich auswählst.
-- **Protokoll und Rückgängig:** Jede Löschung wird protokolliert (Export als
-  CSV/JSON). Solange die Seite nicht neu geladen wird, lassen sich gelöschte
-  Termine neu anlegen – allerdings ohne Raumbuchungen, Dienstplan-Events,
-  Einladungen, Anmeldegruppen und Bilder. Die ChurchTools-API bietet kein
-  Wiederherstellen gelöschter Termine; lösche also trotzdem mit Bedacht.
+- **Terminserien:** Einzelne Vorkommen einer Serie kann das Skript noch
+  nicht löschen; sie werden übersprungen. Eine Serie wird nur als Ganzes
+  gelöscht – mit allen Vorkommen, auch außerhalb des geladenen Zeitraums –
+  und nur, wenn du das in der Vorschau ausdrücklich anhakst.
+- **Protokoll:** Jede Löschung, jeder Trockenlauf und jedes Wiederherstellen
+  wird protokolliert. Das Protokoll lässt sich als CSV oder JSON speichern
+  (in der Zusammenfassung und im Reiter „Start“). Es liegt nur im
+  Arbeitsspeicher und ist nach dem Neuladen der Seite weg – speichere es
+  also, bevor du die Seite verlässt. Die Datei enthält Titel und Zeiten
+  deiner Termine; gib sie nicht unbedacht weiter.
+- **Rückgängig machen:** Gelöschte Termine lassen sich neu anlegen, solange
+  die Seite nicht neu geladen wurde. Wiederhergestellt werden Titel, Texte,
+  Zeiten, Wiederholung, Ort, Link und Tags; der Termin bekommt eine neue ID.
+  **Nicht** wiederhergestellt werden Raum- und Ressourcenbuchungen, Events
+  der Dienstplanung, Einladungen, Anmeldegruppen und Bilder. Die
+  ChurchTools-API selbst bietet kein Wiederherstellen – lösche also trotzdem
+  mit Bedacht.
+- **Abbrechen:** „Abbrechen“ hält nach dem gerade laufenden Termin an. Was
+  bis dahin gelöscht wurde, bleibt gelöscht (und lässt sich rückgängig
+  machen).
+
+## Probleme und Wünsche
+
+Bitte als [Issue](https://github.com/juliannoah/churchtools-power-tools/issues)
+melden – ohne echte Namen, Termine oder andere persönliche Daten.
 
 ## Entwicklung
 
@@ -34,14 +81,26 @@ Voraussetzung: Node.js 22 oder neuer.
 
 ```sh
 npm install
-npm test         # Unit-Tests
-npm run build    # erzeugt dist/churchtools-power-tools.user.js
-npm run preview  # liefert das gebaute Skript lokal zur Installation aus
+npm test           # Unit-Tests
+npm run typecheck  # Typprüfung
+npm run build      # erzeugt dist/churchtools-power-tools.user.js
+npm run preview    # liefert das gebaute Skript lokal zur Installation aus
 ```
 
 Zum Ausprobieren das gebaute Skript im Userscript-Manager installieren und
-eine ChurchTools-Instanz (`https://<name>.church.tools`) öffnen. Unten rechts
-erscheint der Knopf „Power-Tools“.
+eine ChurchTools-Instanz öffnen. Aufbau und Regeln des Projekts stehen in
+[CLAUDE.md](CLAUDE.md), der Bezug der API-Beschreibung in
+[docs/README.md](docs/README.md).
+
+### Release
+
+1. Version in `package.json` erhöhen (`npm version <neu> --no-git-tag-version`)
+   und in `CHANGELOG.md` einen Abschnitt `## [<neu>] – <Datum>` anlegen.
+2. Committen und pushen.
+3. Tag setzen und pushen: `git tag v<neu> && git push origin v<neu>`.
+
+Die GitHub Action prüft, ob Tag und Version zusammenpassen, testet, baut und
+veröffentlicht `.user.js` und `.meta.js` als Release.
 
 ## Lizenz
 
