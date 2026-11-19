@@ -6,9 +6,17 @@ import { type ApiClient, describeError, isAbortError } from '../../core/api-clie
 import {
   type AppointmentRow,
   type DateRange,
+  type KindFilter,
+  NO_FILTER,
+  type RowFilter,
+  type Selection,
   defaultRange,
+  filterRows,
   formatWhen,
+  setAllSelected,
+  summarizeSelection,
   toRows,
+  toggleSelected,
   validateRange,
 } from './logic';
 
@@ -19,6 +27,8 @@ type Loadable<T> =
   | { status: 'ready'; value: T };
 
 interface LoadedAppointments {
+  /** Zählt die Abfragen, damit Filter und Auswahl bei jedem Laden neu starten. */
+  loadId: number;
   rows: AppointmentRow[];
   calendarName: string;
   range: DateRange;
@@ -30,7 +40,10 @@ const CALENDAR_TYPE_LABEL: Record<Calendar['type'], string> = {
   personal: 'Persönlicher Kalender',
 };
 
-/** Phase 1: Kalender wählen und dessen Termine als Tabelle anzeigen (nur lesen). */
+/**
+ * Kalender wählen, dessen Termine als Tabelle anzeigen, filtern und
+ * auswählen. Es wird nur gelesen – das Löschen folgt in Phase 3.
+ */
 export function AppointmentsView({ api }: { api: ApiClient }) {
   const [calendars, setCalendars] = useState<Loadable<Calendar[]>>({ status: 'loading' });
   const [calendarId, setCalendarId] = useState<number | undefined>();
@@ -41,6 +54,7 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
   // Bricht eine laufende Termin-Abfrage ab, wenn eine neue startet oder der
   // Reiter geschlossen wird.
   const pending = useRef<AbortController | null>(null);
+  const loadCounter = useRef(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -74,7 +88,12 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
         if (controller.signal.aborted) return;
         setAppointments({
           status: 'ready',
-          value: { rows: toRows(occurrences), calendarName: calendarLabel(selected), range },
+          value: {
+            loadId: ++loadCounter.current,
+            rows: toRows(occurrences),
+            calendarName: calendarLabel(selected),
+            range,
+          },
         });
       })
       .catch((error: unknown) => {
@@ -98,7 +117,9 @@ export function AppointmentsView({ api }: { api: ApiClient }) {
   return (
     <>
       <h2>Termine</h2>
-      <p class="muted">Bisher nur Anzeige – es wird nichts geändert oder gelöscht.</p>
+      <p class="muted">
+        Termine anzeigen, filtern und auswählen. Es wird noch nichts geändert oder gelöscht.
+      </p>
       <form
         class="toolbar"
         onSubmit={(event) => {
@@ -166,15 +187,28 @@ function AppointmentResult({ state }: { state: Loadable<LoadedAppointments> }) {
         </p>
       );
     case 'ready':
-      return <AppointmentTable {...state.value} />;
+      return <AppointmentTable key={state.value.loadId} {...state.value} />;
   }
 }
 
+const KIND_LABEL: Record<KindFilter, string> = {
+  all: 'Alle',
+  single: 'Nur Einzeltermine',
+  series: 'Nur Serientermine',
+};
+
 function AppointmentTable({ rows, calendarName, range }: LoadedAppointments) {
+  const [filter, setFilter] = useState<RowFilter>(NO_FILTER);
+  const [selection, setSelection] = useState<Selection>(() => new Set<string>());
+
   const summary = `${rows.length} ${rows.length === 1 ? 'Termin' : 'Termine'} in „${calendarName}“ (${range.from} bis ${range.to})`;
   if (rows.length === 0) return <p class="notice">{summary}.</p>;
 
+  const visible = filterRows(rows, filter);
+  const selected = summarizeSelection(rows, visible, selection);
+  const allVisibleSelected = visible.length > 0 && selected.visibleSelected === visible.length;
   const seriesCount = rows.filter((row) => row.isSeries).length;
+
   return (
     <>
       <p class="muted">
@@ -182,29 +216,108 @@ function AppointmentTable({ rows, calendarName, range }: LoadedAppointments) {
         {seriesCount > 0 && `, davon ${seriesCount} aus Terminserien`}. Jede Zeile ist ein
         einzelnes Vorkommen.
       </p>
-      <table class="data">
-        <thead>
-          <tr>
-            <th>Datum</th>
-            <th>Titel</th>
-            <th>Serie</th>
-            <th class="num">ID</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.key}>
-              <td class="nowrap">{formatWhen(row)}</td>
-              <td>
-                {row.title}
-                {row.subtitle && <div class="muted">{row.subtitle}</div>}
-              </td>
-              <td>{row.isSeries && <span class="badge">Serie: {row.repeatLabel}</span>}</td>
-              <td class="num">{row.appointmentId}</td>
+      <div class="toolbar">
+        <label>
+          Titel enthält
+          <input
+            type="search"
+            value={filter.text}
+            placeholder="Suchtext"
+            onInput={(event) => setFilter({ ...filter, text: event.currentTarget.value })}
+          />
+        </label>
+        <label>
+          Art
+          <select
+            value={filter.kind}
+            onChange={(event) =>
+              setFilter({ ...filter, kind: event.currentTarget.value as KindFilter })
+            }
+          >
+            {(Object.keys(KIND_LABEL) as KindFilter[]).map((kind) => (
+              <option key={kind} value={kind}>
+                {KIND_LABEL[kind]}
+              </option>
+            ))}
+          </select>
+        </label>
+        {visible.length < rows.length && (
+          <span class="muted toolbar-text">
+            {visible.length} von {rows.length} angezeigt
+          </span>
+        )}
+      </div>
+      <div class="selection-bar" aria-live="polite">
+        <strong>{selected.count} ausgewählt</strong>
+        {selected.seriesOccurrences > 0 && (
+          <span>
+            davon {selected.seriesOccurrences} Vorkommen aus {selected.seriesCount}{' '}
+            {selected.seriesCount === 1 ? 'Serie' : 'Serien'} (einzelne Vorkommen, nicht die
+            ganze Serie)
+          </span>
+        )}
+        {selected.hidden > 0 && (
+          <span class="warn">{selected.hidden} davon durch den Filter ausgeblendet</span>
+        )}
+        {selected.count > 0 && (
+          <button type="button" class="link" onClick={() => setSelection(new Set<string>())}>
+            Auswahl aufheben
+          </button>
+        )}
+      </div>
+      {visible.length === 0 ? (
+        <p class="notice">Kein Termin passt zum Filter.</p>
+      ) : (
+        <table class="data">
+          <thead>
+            <tr>
+              <th class="check">
+                <input
+                  type="checkbox"
+                  aria-label="Alle angezeigten Termine auswählen"
+                  checked={allVisibleSelected}
+                  indeterminate={selected.visibleSelected > 0 && !allVisibleSelected}
+                  onChange={(event) =>
+                    setSelection(setAllSelected(selection, visible, event.currentTarget.checked))
+                  }
+                />
+              </th>
+              <th>Datum</th>
+              <th>Titel</th>
+              <th>Serie</th>
+              <th class="num">ID</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {visible.map((row) => {
+              const isSelected = selection.has(row.key);
+              return (
+                <tr key={row.key} class={isSelected ? 'selected' : undefined}>
+                  <td class="check">
+                    <input
+                      type="checkbox"
+                      aria-label={`${row.title}, ${formatWhen(row)} auswählen`}
+                      checked={isSelected}
+                      onChange={(event) =>
+                        setSelection(
+                          toggleSelected(selection, row.key, event.currentTarget.checked),
+                        )
+                      }
+                    />
+                  </td>
+                  <td class="nowrap">{formatWhen(row)}</td>
+                  <td>
+                    {row.title}
+                    {row.subtitle && <div class="muted">{row.subtitle}</div>}
+                  </td>
+                  <td>{row.isSeries && <span class="badge">Serie: {row.repeatLabel}</span>}</td>
+                  <td class="num">{row.appointmentId}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
     </>
   );
 }

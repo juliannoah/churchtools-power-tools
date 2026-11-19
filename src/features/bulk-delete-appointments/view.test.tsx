@@ -64,11 +64,42 @@ describe('AppointmentsView', () => {
     );
     const cells = [...container.querySelectorAll('tbody td')].map((td) => td.textContent);
     expect(cells).toEqual([
+      '',
       'So., 08.03.2026, ganztägig',
       'Probe Testchor',
       'Serie: wöchentlich',
       '11',
     ]);
+  });
+
+  it('zählt die Auswahl und blendet per Filter aus, ohne sie zu verlieren', async () => {
+    const get = (async (path: string) =>
+      path === '/calendars' ? calendars : appointments) as ApiClient['get'];
+    render(<AppointmentsView api={fakeApi(get)} />, container);
+    await settle();
+    container.querySelector('form')?.dispatchEvent(new Event('submit', { cancelable: true }));
+    await settle();
+    const bar = () => container.querySelector('.selection-bar')?.textContent ?? '';
+    expect(bar()).toContain('0 ausgewählt');
+
+    const checkbox = container.querySelector<HTMLInputElement>('tbody input[type=checkbox]');
+    if (!checkbox) throw new Error('Checkbox nicht gefunden');
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    await settle();
+
+    expect(bar()).toContain('1 ausgewählt');
+    expect(bar()).toContain('1 Vorkommen aus 1 Serie');
+    expect(container.querySelector('tbody tr')?.className).toBe('selected');
+
+    const search = container.querySelector<HTMLInputElement>('input[type=search]');
+    if (!search) throw new Error('Suchfeld nicht gefunden');
+    search.value = 'gibt es nicht';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    await settle();
+
+    expect(container.querySelector('table')).toBeNull();
+    expect(bar()).toContain('1 davon durch den Filter ausgeblendet');
   });
 
   it('zeigt fehlende Berechtigung verständlich an', async () => {

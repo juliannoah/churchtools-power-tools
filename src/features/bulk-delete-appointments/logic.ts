@@ -72,7 +72,82 @@ export function toRows(occurrences: readonly AppointmentOccurrence[]): Appointme
     .sort((a, b) => sortValue(a) - sortValue(b) || a.title.localeCompare(b.title, 'de'));
 }
 
-type RepeatInfo = Pick<AppointmentBase, 'repeatId' | 'repeatFrequency' | 'repeatUntil'>;
+export type KindFilter = 'all' | 'single' | 'series';
+
+export interface RowFilter {
+  /** Suchtext für Titel und Untertitel; leer = alle. */
+  text: string;
+  kind: KindFilter;
+}
+
+export const NO_FILTER: RowFilter = { text: '', kind: 'all' };
+
+/** Zeilen, die zum Filter passen (Reihenfolge bleibt erhalten). */
+export function filterRows(rows: readonly AppointmentRow[], filter: RowFilter): AppointmentRow[] {
+  const needle = filter.text.trim().toLocaleLowerCase('de');
+  return rows.filter((row) => {
+    if (filter.kind === 'single' && row.isSeries) return false;
+    if (filter.kind === 'series' && !row.isSeries) return false;
+    if (needle === '') return true;
+    return `${row.title}\n${row.subtitle ?? ''}`.toLocaleLowerCase('de').includes(needle);
+  });
+}
+
+/** Auswahl als Menge von Zeilen-Schlüsseln (`AppointmentRow.key`). */
+export type Selection = ReadonlySet<string>;
+
+export function toggleSelected(selection: Selection, key: string, selected: boolean): Selection {
+  const next = new Set(selection);
+  if (selected) next.add(key);
+  else next.delete(key);
+  return next;
+}
+
+/** Wählt alle übergebenen (sichtbaren) Zeilen aus bzw. ab; der Rest bleibt. */
+export function setAllSelected(
+  selection: Selection,
+  rows: readonly AppointmentRow[],
+  selected: boolean,
+): Selection {
+  const next = new Set(selection);
+  for (const row of rows) {
+    if (selected) next.add(row.key);
+    else next.delete(row.key);
+  }
+  return next;
+}
+
+export interface SelectionSummary {
+  /** Ausgewählte Vorkommen insgesamt. */
+  count: number;
+  /** Davon Vorkommen aus Terminserien. */
+  seriesOccurrences: number;
+  /** Anzahl verschiedener Serien, aus denen Vorkommen gewählt sind. */
+  seriesCount: number;
+  /** Ausgewählt, aber durch den Filter gerade nicht sichtbar. */
+  hidden: number;
+  /** Sichtbare Zeilen, die ausgewählt sind. */
+  visibleSelected: number;
+}
+
+export function summarizeSelection(
+  rows: readonly AppointmentRow[],
+  visibleRows: readonly AppointmentRow[],
+  selection: Selection,
+): SelectionSummary {
+  const selected = rows.filter((row) => selection.has(row.key));
+  const fromSeries = selected.filter((row) => row.isSeries);
+  const visibleSelected = visibleRows.filter((row) => selection.has(row.key)).length;
+  return {
+    count: selected.length,
+    seriesOccurrences: fromSeries.length,
+    seriesCount: new Set(fromSeries.map((row) => row.appointmentId)).size,
+    hidden: selected.length - visibleSelected,
+    visibleSelected,
+  };
+}
+
+type RepeatInfo =Pick<AppointmentBase, 'repeatId' | 'repeatFrequency' | 'repeatUntil'>;
 
 /** Beschreibung der Wiederholung, z. B. „alle 2 Wochen bis 31.12.2026“. */
 export function describeRepeat(base: RepeatInfo): string {

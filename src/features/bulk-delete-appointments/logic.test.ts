@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { AppointmentBase, AppointmentOccurrence } from '../../api/types';
-import { defaultRange, describeRepeat, formatWhen, toRows, validateRange } from './logic';
+import {
+  NO_FILTER,
+  defaultRange,
+  describeRepeat,
+  filterRows,
+  formatWhen,
+  setAllSelected,
+  summarizeSelection,
+  toRows,
+  toggleSelected,
+  validateRange,
+} from './logic';
 
 // Ausschließlich erfundene Daten.
 function occurrence(
@@ -62,6 +73,78 @@ describe('toRows', () => {
 
     expect(rows.every((row) => row.isSeries && row.appointmentId === 9)).toBe(true);
     expect(new Set(rows.map((row) => row.key)).size).toBe(2);
+  });
+});
+
+describe('Filter und Auswahl', () => {
+  const rows = toRows([
+    occurrence({ id: 1, title: 'Hauskreis' }, '2026-03-01T09:00:00Z', '2026-03-01T10:00:00Z'),
+    occurrence(
+      { id: 2, title: 'Chorprobe', repeatId: 7 },
+      '2026-03-02T09:00:00Z',
+      '2026-03-02T10:00:00Z',
+    ),
+    occurrence(
+      { id: 2, title: 'Chorprobe', repeatId: 7 },
+      '2026-03-09T09:00:00Z',
+      '2026-03-09T10:00:00Z',
+    ),
+    occurrence(
+      { id: 3, title: 'Putztag', subtitle: 'mit Chor', repeatId: 31 },
+      '2026-03-10T09:00:00Z',
+      '2026-03-10T10:00:00Z',
+    ),
+  ]);
+  const titles = (list: typeof rows) => list.map((row) => row.title);
+
+  it('filtert nach Text in Titel und Untertitel, ohne Groß-/Kleinschreibung', () => {
+    expect(titles(filterRows(rows, { text: ' CHOR ', kind: 'all' }))).toEqual([
+      'Chorprobe',
+      'Chorprobe',
+      'Putztag',
+    ]);
+    expect(filterRows(rows, NO_FILTER)).toHaveLength(4);
+  });
+
+  it('filtert nach Einzelterminen und Serien', () => {
+    expect(titles(filterRows(rows, { text: '', kind: 'single' }))).toEqual(['Hauskreis']);
+    expect(filterRows(rows, { text: '', kind: 'series' })).toHaveLength(3);
+    expect(filterRows(rows, { text: 'haus', kind: 'series' })).toEqual([]);
+  });
+
+  it('wählt einzelne Zeilen an und ab, ohne die alte Auswahl zu verändern', () => {
+    const empty = new Set<string>();
+    const one = toggleSelected(empty, rows[0]!.key, true);
+
+    expect(empty.size).toBe(0);
+    expect([...one]).toEqual([rows[0]!.key]);
+    expect(toggleSelected(one, rows[0]!.key, false).size).toBe(0);
+  });
+
+  it('„alle auswählen“ betrifft nur die sichtbaren Zeilen', () => {
+    const visible = filterRows(rows, { text: '', kind: 'series' });
+    const all = setAllSelected(new Set([rows[0]!.key]), visible, true);
+    expect(all.size).toBe(4);
+
+    const rest = setAllSelected(all, visible, false);
+    expect([...rest]).toEqual([rows[0]!.key]);
+  });
+
+  it('fasst die Auswahl zusammen: Serien und ausgeblendete Zeilen', () => {
+    const selection = new Set(rows.map((row) => row.key));
+    const visible = filterRows(rows, { text: '', kind: 'single' });
+
+    expect(summarizeSelection(rows, visible, selection)).toEqual({
+      count: 4,
+      seriesOccurrences: 3,
+      seriesCount: 2,
+      hidden: 3,
+      visibleSelected: 1,
+    });
+  });
+
+  it('ignoriert Schlüssel, zu denen es keine Zeile gibt', () => {
+    expect(summarizeSelection(rows, rows, new Set(['unbekannt'])).count).toBe(0);
   });
 });
 

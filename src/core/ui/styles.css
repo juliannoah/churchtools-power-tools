@@ -9,6 +9,7 @@
   --accent: #2563eb;
   --accent-fg: #ffffff;
   --danger: #b91c1c;
+  --selected: #dbeafe;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   line-height: 1.45;
@@ -24,6 +25,7 @@
     --border: #374151;
     --accent: #3b82f6;
     --danger: #fca5a5;
+    --selected: #1e3a5f;
   }
 }
 
@@ -247,6 +249,53 @@ table.data .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: var(--fg-muted);
+}
+
+table.data .check {
+  width: 1%;
+  padding-right: 0;
+}
+
+table.data tr.selected td {
+  background: var(--selected);
+}
+
+input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  padding: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.toolbar-text {
+  padding-bottom: 6px;
+}
+
+.selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-muted);
+}
+
+.selection-bar .warn {
+  color: var(--danger);
+}
+
+button.link {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 .badge {
