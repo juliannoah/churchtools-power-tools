@@ -165,7 +165,7 @@ Stufen:
 |---|---|---|
 | A | Nur lesen: offene Followups, Person, mögliche Dubletten (gleiche E-Mail oder exakt gleicher Vor- und Nachname), Filter nach Personenstatus, Einzelprüfung per Personen-ID | gebaut. Auf der Instanz bestätigt (2026-11-19): Followups, Personen und Gruppe werden geladen. Offen: Dublettenerkennung an einem echten Fall (über die Einzelprüfung), Statusfilter |
 | B | Bearbeiten: „Duplikat …“ / „Kein Duplikat …“ je Followup mit Vorschau der Schritte, Trockenlauf als Vorgabe, Protokoll nur mit IDs | gebaut (`actions.ts`, `action-view.tsx`). Auf der Instanz bisher nur Trockenläufe „Kein Duplikat“ (2026-11-19: mit vorgeschlagener Gruppe, mit gesuchter Gruppe und ohne Gruppe – Schritte stimmen) und ein echter Lauf „Kein Duplikat“ ohne Gruppe (Followup als erledigt markiert). **Noch nicht echt gelaufen:** Aufnahme in eine Gruppe und der gesamte Duplikat-Fall – diesen zuerst nur mit zwei Testpersonen |
-| C | Allgemeine Dublettensuche über alle sichtbaren Personen (Wunsch vom 2026-11-19): Personen seitenweise laden, lokal nach gleichem Namen bzw. gleicher E-Mail gruppieren; Alternative `GET /persons/duplicates` (Beta, Rechte ungeklärt). Aktionen wie in Stufe B. | Suche gebaut (Reiter „Dubletten“, nur lesen, eigene Gruppierung im Browser). Auf der Instanz gelaufen (2026-11-19): gut 1000 Personen, 5 Gruppen, ca. 8 Sekunden. Offen: ob alle erwarteten Personen dabei sind (Sichtbarkeit, Archiv). Seit 2026-11-19 zusätzlich: Name als Link zur Person (neuer Tab) und je Gruppe „Duplikat zusammenführen …“ – Hauptaccount wählen, übrige als dessen Duplikat eintragen, alle in die Gruppe für Duplikate (`duplicates/merge-view.tsx`, `buildMergeSteps`). Das Skript führt selbst **nichts** zusammen (kein `PATCH /persons/{id}/merge/…`); das macht die zuständige AG. Trockenlauf auf der Instanz bestätigt (2026-11-19): Beziehungstyp und die versteckte Gruppe für Duplikate werden gefunden, die drei Schritte stimmen. Echte Ausführung noch offen |
+| C | Allgemeine Dublettensuche über alle sichtbaren Personen (Wunsch vom 2026-11-19): Personen seitenweise laden, lokal nach gleichem Namen bzw. gleicher E-Mail gruppieren; Alternative `GET /persons/duplicates` (Beta, Rechte ungeklärt). Aktionen wie in Stufe B. | Suche gebaut (Reiter „Dubletten“, nur lesen, eigene Gruppierung im Browser). Auf der Instanz gelaufen (2026-11-19): gut 1000 Personen, 5 Gruppen, ca. 8 Sekunden. Offen: ob alle erwarteten Personen dabei sind (Sichtbarkeit, Archiv). Seit 2026-11-19 zusätzlich: Name als Link zur Person (neuer Tab) und je Gruppe „Duplikat zusammenführen …“ – Hauptaccount wählen, übrige als dessen Duplikat eintragen, alle in die Gruppe für Duplikate (`duplicates/merge-view.tsx`, `buildMergeSteps`). Das Skript führt selbst **nichts** zusammen (kein `PATCH /persons/{id}/merge/…`); das macht die zuständige AG. Auf der Instanz bestätigt (2026-11-19): Trockenlauf und ein echter Lauf (Beziehung angelegt, beide in der Gruppe für Duplikate). Offen: Blick in ChurchTools, ob die Beziehung beim Hauptaccount richtig herum steht; Link zur Person |
 
 So ist Stufe B umgesetzt:
 
@@ -174,9 +174,13 @@ So ist Stufe B umgesetzt:
   nach einem Abbruch macht dort weiter.
 - Scheitert ein Schritt, wird angehalten; die übrigen werden als „nicht
   ausgeführt“ protokolliert.
-- Beziehung: Angelegt wird vom Original aus. Nennt die Antwort die neue
-  Person nicht als „Duplikat“, wird die Beziehung gelöscht und von der
-  anderen Seite aus angelegt (`degreeOfRelationship` der Antwort).
+- Beziehung: Die Antwort auf das Anlegen nennt in `degreeOfRelationship`,
+  was die andere Person geworden ist. Stimmt die Seite nicht, wird die
+  Beziehung gelöscht und von der anderen Person aus angelegt. Auf Julians
+  Instanz muss **vom Duplikat aus** angelegt werden (echter Lauf am
+  2026-11-19: „Richtung automatisch korrigiert“). Das Skript merkt sich die
+  richtige Seite je Beziehungstyp im Browser und beginnt beim nächsten Mal
+  dort; geprüft wird trotzdem jedes Mal.
 - Der Beziehungstyp wird an der Seitenbezeichnung „Duplikat“ erkannt; die
   Gruppe „Duplikate“ wird per Namen gesucht oder per ID eingegeben und im
   Browser gemerkt (`core/settings.ts`, nur IDs und Suchtexte).
