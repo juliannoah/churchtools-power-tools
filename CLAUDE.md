@@ -128,8 +128,8 @@ docs/
 | Phase | Inhalt | Stand |
 |---|---|---|
 | 0 | Setup, Hello-World-Panel, CLAUDE.md | fertig, auf der Instanz getestet (2026-11-19) |
-| 1 | Nur lesen: API-Client, whoami, Kalender, Termine als Tabelle | gebaut; Termine laden auf der Instanz funktioniert (2026-11-19), Abgleich von Uhrzeiten/Serien noch nicht bestätigt |
-| 2 | Auswahl: Filter, Checkboxen, Serien markiert | offen |
+| 1 | Nur lesen: API-Client, whoami, Kalender, Termine als Tabelle | gebaut; Termine laden auf der Instanz funktioniert (2026-11-19), Uhrzeiten und ganztägige Termine bestätigt; Serien-Markierung noch nicht an einer echten Serie geprüft |
+| 2 | Auswahl: Filter, Checkboxen, Serien markiert | gebaut, Test auf der Instanz durch Julian offen |
 | 3 | Löschen gemäß Sicherheitsregeln, Protokoll, Export | offen |
 | 4 | GitHub Action, Release v0.1.0, README fertig | offen |
 

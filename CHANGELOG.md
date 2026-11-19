@@ -21,3 +21,6 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Reiter „Start“ zeigt, als wer man angemeldet ist.
 - Neuer Reiter „Termine“ (nur lesen): Kalender und Zeitraum wählen, Termine
   als Tabelle anzeigen; Vorkommen aus Terminserien sind markiert.
+- Termine filtern (Titel, Einzeltermine/Serien) und per Checkbox auswählen,
+  auch alle angezeigten auf einmal. Die Auswahl zeigt, wie viele Vorkommen
+  aus Serien stammen und wie viele der Filter gerade ausblendet.

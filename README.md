@@ -5,7 +5,8 @@ Ein Userscript für [Tampermonkey](https://www.tampermonkey.net/) und
 ChurchTools vereinfacht.
 
 > **Stand:** in Entwicklung. Bisher kann das Skript die Termine eines
-> Kalenders für einen Zeitraum als Tabelle anzeigen (nur lesen). Die erste
+> Kalenders für einen Zeitraum als Tabelle anzeigen, filtern und auswählen
+> (nur lesen). Die erste
 > eigentliche Funktion – mehrere Termine eines Kalenders auf einmal auswählen
 > und löschen – folgt. Es gibt noch kein Release.
 
