@@ -165,6 +165,36 @@ describe('Duplikat-Fall', () => {
     expect(outcomes[0]).toMatchObject({ result: 'done', detail: 'Richtung automatisch korrigiert' });
   });
 
+  it('merkt sich die richtige Seite und legt beim nächsten Mal gleich von dort an', async () => {
+    // So verhält sich die Instanz: Die andere Person bekommt die Seite „Original“.
+    const createRelationship = vi.fn<ActionOps['createRelationship']>(async (_personId, other) =>
+      relationship('Original', other, 501),
+    );
+    let remembered: boolean | undefined;
+    const direction = () => ({
+      fromDuplicate: remembered ?? false,
+      remember: (fromDuplicate: boolean) => {
+        remembered = fromDuplicate;
+      },
+    });
+
+    const first = fakeOps({ createRelationship });
+    await run(buildDuplicateSteps({ ...input, direction: direction() }, first), false);
+    expect(remembered).toBe(true);
+    expect(first.deleteRelationship).toHaveBeenCalledTimes(1);
+
+    createRelationship.mockClear();
+    const second = fakeOps({ createRelationship });
+    const { outcomes } = await run(
+      buildDuplicateSteps({ ...input, direction: direction() }, second),
+      false,
+    );
+
+    expect(createRelationship.mock.calls).toEqual([[900, 10, 8]]);
+    expect(second.deleteRelationship).not.toHaveBeenCalled();
+    expect(outcomes[0]).toMatchObject({ result: 'done', detail: '' });
+  });
+
   it('hält nach einem Fehler an und führt den Rest nicht aus', async () => {
     const ops = fakeOps({
       addGroupMember: vi.fn(async () => {

@@ -10,10 +10,12 @@ import {
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
 import { isTestBuild } from '../../core/build';
 import { LOG_RESULT_LABEL, type Logger } from '../../core/logger';
+import { readSetting, writeSetting } from '../../core/settings';
 import {
   type ActionOps,
   type ActionStep,
   type DuplicateRelation,
+  type RelationDirection,
   type StepOutcome,
   findDuplicateRelations,
   runSteps,
@@ -83,6 +85,18 @@ export function useDuplicateRelation(api: ApiClient, enabled = true): DuplicateR
       ? (relations.relations.find((entry) => entry.type.id === typeId) ?? null)
       : null;
   return { relations, relation, typeId, setTypeId };
+}
+
+/**
+ * Merkt sich im Browser je Beziehungstyp, von welcher Seite aus die
+ * Beziehung richtig herum entsteht (nur ein Schalter, keine Personendaten).
+ */
+export function relationDirection(relation: DuplicateRelation): RelationDirection {
+  const key = `duplicates:relation-from-duplicate:${relation.type.id}`;
+  return {
+    fromDuplicate: readSetting(key) === '1',
+    remember: (fromDuplicate) => writeSetting(key, fromDuplicate ? '1' : '0'),
+  };
 }
 
 /** Zeigt den erkannten Beziehungstyp bzw. lässt bei mehreren wählen. */

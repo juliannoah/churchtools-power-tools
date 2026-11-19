@@ -72,6 +72,17 @@ export function addDays(today: Date, days: number): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+/**
+ * Erfahrungswert, von welcher Seite aus die Beziehung anzulegen ist. Erspart
+ * beim nächsten Mal das Anlegen, Löschen und erneute Anlegen.
+ */
+export interface RelationDirection {
+  /** true: vom Duplikat aus anlegen; false: vom Original aus. */
+  fromDuplicate: boolean;
+  /** Wird aufgerufen, sobald feststeht, welche Seite richtig war. */
+  remember: (fromDuplicate: boolean) => void;
+}
+
 export interface DuplicateActionInput {
   /** Die neue (selbstregistrierte) Person – das Duplikat. */
   duplicateId: number;
@@ -83,6 +94,7 @@ export interface DuplicateActionInput {
   /** Followup, das verschoben und kommentiert wird; fehlt außerhalb der Followups. */
   followUpId?: number;
   today: Date;
+  direction?: RelationDirection;
 }
 
 /**
@@ -111,19 +123,35 @@ export function buildDuplicateSteps(input: DuplicateActionInput, ops: ActionOps)
         return existing ? 'Beziehung besteht bereits' : null;
       },
       execute: async () => {
-        // Aus Sicht des Originals muss die andere Person das Duplikat sein.
-        const created = await ops.createRelationship(originalId, duplicateId, typeId);
-        if (!directed || isDuplicateSide(created)) return;
+        // Von welcher Person aus die Beziehung angelegt werden muss, damit
+        // die Seiten stimmen, legt die API-Beschreibung nicht fest. Die
+        // Antwort nennt, was die andere Person für die anlegende geworden
+        // ist – daran wird geprüft und nötigenfalls umgedreht.
+        const createFrom = async (fromDuplicate: boolean) => {
+          const created = fromDuplicate
+            ? await ops.createRelationship(duplicateId, originalId, typeId)
+            : await ops.createRelationship(originalId, duplicateId, typeId);
+          // Vom Original aus muss die andere Person das Duplikat sein,
+          // vom Duplikat aus gerade nicht.
+          const correct = !directed || isDuplicateSide(created) !== fromDuplicate;
+          return { created, correct, owner: fromDuplicate ? duplicateId : originalId };
+        };
 
-        // Die API hat die Seiten andersherum vergeben: zurücknehmen und
-        // von der anderen Person aus anlegen.
-        await ops.deleteRelationship(originalId, created.id);
-        const reversed = await ops.createRelationship(duplicateId, originalId, typeId);
-        if (isDuplicateSide(reversed)) {
+        const first = input.direction?.fromDuplicate ?? false;
+        const attempt = await createFrom(first);
+        if (attempt.correct) {
+          if (directed) input.direction?.remember(first);
+          return;
+        }
+
+        await ops.deleteRelationship(attempt.owner, attempt.created.id);
+        const second = await createFrom(!first);
+        if (!second.correct) {
           throw new Error(
             'Die Richtung der Beziehung ließ sich nicht eindeutig setzen – bitte in ChurchTools prüfen.',
           );
         }
+        input.direction?.remember(!first);
         return 'Richtung automatisch korrigiert';
       },
     },
@@ -156,6 +184,7 @@ export interface MergeActionInput {
   duplicateIds: readonly number[];
   relation: DuplicateRelation;
   duplicateGroupId: number;
+  direction?: RelationDirection;
 }
 
 /**
@@ -172,6 +201,7 @@ export function buildMergeSteps(input: MergeActionInput, ops: ActionOps): Action
         relation: input.relation,
         duplicateGroupId: input.duplicateGroupId,
         today: new Date(),
+        direction: input.direction,
       },
       ops,
     ),

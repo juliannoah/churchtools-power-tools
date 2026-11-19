@@ -6,6 +6,7 @@ import { GroupPicker } from '../../core/ui/GroupPicker';
 import { PersonInfo, type StatusMap } from '../../core/ui/PersonInfo';
 import {
   RelationSection,
+  relationDirection,
   StepPreview,
   StepRunView,
   useActionOps,
@@ -53,6 +54,7 @@ export function MergeAction({ api, logger, group, statuses, onClose }: MergeActi
         duplicateIds: group.persons.map((person) => person.id).filter((id) => id !== mainId),
         relation,
         duplicateGroupId: duplicateGroup.id,
+        direction: relationDirection(relation),
       },
       ops,
     );

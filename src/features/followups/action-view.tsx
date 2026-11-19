@@ -6,6 +6,7 @@ import { GroupPicker } from '../../core/ui/GroupPicker';
 import { PersonInfo, type StatusMap } from '../../core/ui/PersonInfo';
 import {
   RelationSection,
+  relationDirection,
   StepPreview,
   StepRunView,
   useActionOps,
@@ -98,6 +99,7 @@ export function FollowUpAction({
           duplicateGroupId: duplicateGroup.id,
           followUpId: followUp.id,
           today: new Date(),
+          direction: relationDirection(relation),
         },
         ops,
       );
