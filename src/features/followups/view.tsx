@@ -9,8 +9,10 @@ import {
 } from '../../api/persons';
 import type { Person, PersonStatus } from '../../api/types';
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
+import type { Logger } from '../../core/logger';
 import { emailsOf, formatDate, statusLabel } from '../../core/persons';
 import { PersonInfo, type StatusMap } from '../../core/ui/PersonInfo';
+import { type ActionKind, FollowUpAction } from './action-view';
 import {
   type DuplicateCandidate,
   type FollowUpFilter,
@@ -62,8 +64,10 @@ function storeStatusFilter(statusId: number | null): void {
  * Offene Followups mit der betroffenen Person und möglichen Dubletten. Nur
  * lesen – das Bearbeiten (Duplikat markieren, abschließen) folgt.
  */
-export function FollowUpsView({ api }: { api: ApiClient }) {
+export function FollowUpsView({ api, logger }: { api: ApiClient; logger: Logger }) {
   const [state, setState] = useState<State>({ status: 'idle' });
+  /** Das Followup, das gerade bearbeitet wird. */
+  const [acting, setActing] = useState<{ followUpId: number; kind: ActionKind } | null>(null);
   const [candidates, setCandidates] = useState<ReadonlyMap<number, CandidateResult>>(new Map());
   const [filter, setFilter] = useState('');
   const [statusId, setStatusId] = useState<number | null>(readStatusFilter);
@@ -115,13 +119,36 @@ export function FollowUpsView({ api }: { api: ApiClient }) {
     })();
   };
 
+  const actingRow =
+    acting && state.status === 'ready'
+      ? state.rows.find((row) => row.followUp.id === acting.followUpId)
+      : undefined;
+  if (acting && state.status === 'ready' && actingRow?.person) {
+    const found = candidates.get(actingRow.person.id);
+    return (
+      <FollowUpAction
+        api={api}
+        logger={logger}
+        kind={acting.kind}
+        row={{ ...actingRow, person: actingRow.person }}
+        candidates={found && 'candidates' in found ? found.candidates : []}
+        statuses={new Map(state.statuses.map((status) => [status.id, status]))}
+        onClose={(changed) => {
+          setActing(null);
+          if (changed) load();
+        }}
+      />
+    );
+  }
+
   return (
     <>
       <h2>Followups</h2>
       <p class="muted">
         Zeigt deine offenen Followups, die betroffene Person und mögliche Dubletten (gleiche
         E-Mail oder gleicher Vor- und Nachname). Über „Personenstatus“ lässt sich die Liste z. B.
-        auf selbstregistrierte Personen eingrenzen. Bisher nur Anzeige – es wird nichts geändert.
+        auf selbstregistrierte Personen eingrenzen. Geändert wird erst nach Vorschau der
+        einzelnen Schritte; Standard ist ein Trockenlauf.
       </p>
       <div class="toolbar">
         <button
@@ -165,7 +192,12 @@ export function FollowUpsView({ api }: { api: ApiClient }) {
           </label>
         )}
       </div>
-      <Result state={state} filter={{ text: filter, statusId }} candidates={candidates} />
+      <Result
+        state={state}
+        filter={{ text: filter, statusId }}
+        candidates={candidates}
+        onAct={(followUpId, kind) => setActing({ followUpId, kind })}
+      />
       <PersonCheck api={api} statuses={state.status === 'ready' ? state.statuses : []} />
     </>
   );
@@ -197,7 +229,9 @@ function Result({
   state,
   filter,
   candidates,
+  onAct,
 }: {
+  onAct: (followUpId: number, kind: ActionKind) => void;
   state: State;
   filter: FollowUpFilter;
   candidates: ReadonlyMap<number, CandidateResult>;
@@ -236,6 +270,7 @@ function Result({
               <th>Followup</th>
               <th>Person</th>
               <th>Mögliche Dubletten</th>
+              <th>Bearbeiten</th>
             </tr>
           </thead>
           <tbody>
@@ -256,6 +291,26 @@ function Result({
                 <td>
                   {row.person && (
                     <Candidates result={candidates.get(row.person.id)} statuses={statusById} />
+                  )}
+                </td>
+                <td>
+                  {row.person && (
+                    <div class="row-actions">
+                      <button
+                        type="button"
+                        class="secondary"
+                        onClick={() => onAct(row.followUp.id, 'duplicate')}
+                      >
+                        Duplikat …
+                      </button>
+                      <button
+                        type="button"
+                        class="secondary"
+                        onClick={() => onAct(row.followUp.id, 'not-duplicate')}
+                      >
+                        Kein Duplikat …
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>

@@ -22,7 +22,7 @@ const logger = createLogger();
 const modules: PowerToolsModule[] = [
   createHelloModule(api, logger),
   createAppointmentsModule(api, logger),
-  createFollowUpsModule(api),
+  createFollowUpsModule(api, logger),
   createDuplicatesModule(api),
 ];
 

@@ -1,6 +1,7 @@
 import { render } from 'preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ApiClient, RequestOptions } from '../../core/api-client';
+import { createLogger } from '../../core/logger';
 import { FollowUpsView } from './view';
 
 // Ausschließlich erfundene Personen.
@@ -46,7 +47,7 @@ describe('FollowUpsView', () => {
       throw new Error(`unerwartet: ${path}`);
     });
     const api = { get } as unknown as ApiClient;
-    render(<FollowUpsView api={api} />, container);
+    render(<FollowUpsView api={api} logger={createLogger()} />, container);
 
     container.querySelector<HTMLButtonElement>('button.primary')?.click();
     await settle();
@@ -77,7 +78,7 @@ describe('FollowUpsView', () => {
       if (path === '/persons' && 'ids[]' in (options?.query ?? {})) return { data: [newPerson] };
       return { data: [] };
     };
-    render(<FollowUpsView api={{ get } as unknown as ApiClient} />, container);
+    render(<FollowUpsView api={{ get } as unknown as ApiClient} logger={createLogger()} />, container);
     container.querySelector<HTMLButtonElement>('button.primary')?.click();
     await settle();
 
@@ -100,7 +101,7 @@ describe('FollowUpsView', () => {
     const get = vi.fn(async (_path: string, options?: RequestOptions) =>
       'ids[]' in (options?.query ?? {}) ? { data: [newPerson] } : { data: [newPerson, existing] },
     );
-    render(<FollowUpsView api={{ get } as unknown as ApiClient} />, container);
+    render(<FollowUpsView api={{ get } as unknown as ApiClient} logger={createLogger()} />, container);
 
     const input = container.querySelector<HTMLInputElement>('form input');
     if (!input) throw new Error('ID-Feld nicht gefunden');
@@ -119,7 +120,7 @@ describe('FollowUpsView', () => {
 
   it('meldet, wenn es keine offenen Followups gibt', async () => {
     const api = { get: async () => ({ data: [] }) } as unknown as ApiClient;
-    render(<FollowUpsView api={api} />, container);
+    render(<FollowUpsView api={api} logger={createLogger()} />, container);
 
     container.querySelector<HTMLButtonElement>('button.primary')?.click();
     await settle();
