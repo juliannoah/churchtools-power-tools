@@ -2,11 +2,17 @@ import { GM_registerMenuCommand } from '$';
 import type { PowerToolsModule } from './core/module';
 import { onRouteChange } from './core/route';
 import { mountApp } from './core/ui/mount';
-import { helloModule } from './features/hello';
+import { createApiClient } from './core/api-client';
+import { createAppointmentsModule } from './features/bulk-delete-appointments';
+import { createHelloModule } from './features/hello';
+
+// Ein gemeinsamer API-Client für alle Module, damit Throttling und
+// CSRF-Token zentral bleiben.
+const api = createApiClient();
 
 // Hier werden alle Module registriert. Neue Features kommen als eigener
 // Ordner unter src/features/ dazu und werden in diese Liste eingetragen.
-const modules: PowerToolsModule[] = [helloModule];
+const modules: PowerToolsModule[] = [createHelloModule(api), createAppointmentsModule(api)];
 
 const app = mountApp({ version: __APP_VERSION__, modules });
 
