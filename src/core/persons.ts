@@ -37,6 +37,15 @@ export function formatDate(value: string | null | undefined): string {
   return match ? `${match[3]}.${match[2]}.${match[1]}` : '';
 }
 
+/**
+ * Adresse der Person in der ChurchTools-Oberfläche. Das Muster steht nicht
+ * in der OpenAPI-Spezifikation (die beschreibt nur die API); es ist die
+ * Adresse der Personenansicht, an der Instanz zu prüfen.
+ */
+export function personUrl(personId: number, origin: string = window.location.origin): string {
+  return `${origin}/?q=churchdb#PersonView/searchEntry:%23${personId}`;
+}
+
 export function statusLabel(status: PersonStatus): string {
   return status.shortyTranslated
     ? `${status.shortyTranslated} – ${status.nameTranslated}`

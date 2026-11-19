@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { listAllPersons, listPersonStatuses } from '../../api/persons';
 import type { PersonStatus } from '../../api/types';
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
+import type { Logger } from '../../core/logger';
 import { statusLabel } from '../../core/persons';
 import { PersonInfo } from '../../core/ui/PersonInfo';
 import {
@@ -13,6 +14,7 @@ import {
   filterGroups,
   findDuplicateGroups,
 } from './logic';
+import { MergeAction } from './merge-view';
 
 type State =
   | { status: 'idle' }
@@ -30,8 +32,12 @@ type State =
  * und gruppiert sie im Browser nach gleichem Namen bzw. gleicher E-Mail.
  * Nur lesen; die Personendaten bleiben im Arbeitsspeicher dieses Tabs.
  */
-export function DuplicatesView({ api }: { api: ApiClient }) {
+export function DuplicatesView({ api, logger }: { api: ApiClient; logger: Logger }) {
   const [state, setState] = useState<State>({ status: 'idle' });
+  /** Schlüssel der Gruppe, die gerade bearbeitet wird. */
+  const [merging, setMerging] = useState<string | null>(null);
+  /** In dieser Sitzung zur Zusammenführung weitergegebene Gruppen. */
+  const [handedOver, setHandedOver] = useState<ReadonlySet<string>>(new Set());
   // Vorgabe „Gleicher Name“: Geteilte E-Mail-Adressen sind meist Familien.
   const [filter, setFilter] = useState<GroupFilter>({ kind: 'name', text: '', statusId: null });
   const pending = useRef<AbortController | null>(null);
@@ -72,13 +78,34 @@ export function DuplicatesView({ api }: { api: ApiClient }) {
     setState({ status: 'idle' });
   };
 
+  const mergingGroup =
+    merging !== null && state.status === 'ready'
+      ? state.groups.find((group) => group.key === merging)
+      : undefined;
+  if (mergingGroup && state.status === 'ready') {
+    return (
+      <MergeAction
+        api={api}
+        logger={logger}
+        group={mergingGroup}
+        statuses={new Map(state.statuses.map((status) => [status.id, status]))}
+        onClose={(changed) => {
+          if (changed) setHandedOver(new Set([...handedOver, mergingGroup.key]));
+          setMerging(null);
+        }}
+      />
+    );
+  }
+
   return (
     <>
       <h2>Dubletten</h2>
       <p class="muted">
         Prüft alle Personen, die du in ChurchTools sehen darfst, auf mögliche Dubletten: exakt
-        gleicher Vor- und Nachname oder gleiche E-Mail-Adresse. Es wird nichts geändert. Ob es
-        wirklich dieselbe Person ist, musst du selbst beurteilen.
+        gleicher Vor- und Nachname oder gleiche E-Mail-Adresse. Ob es wirklich dieselbe Person
+        ist, musst du selbst beurteilen – ein Klick auf den Namen öffnet die Person in einem
+        neuen Tab. Über „Duplikat zusammenführen …“ gibst du eine Gruppe zur Zusammenführung
+        weiter.
       </p>
       <div class="toolbar">
         <button
@@ -142,12 +169,22 @@ export function DuplicatesView({ api }: { api: ApiClient }) {
           </>
         )}
       </div>
-      <Result state={state} filter={filter} />
+      <Result state={state} filter={filter} handedOver={handedOver} onMerge={setMerging} />
     </>
   );
 }
 
-function Result({ state, filter }: { state: State; filter: GroupFilter }) {
+function Result({
+  state,
+  filter,
+  handedOver,
+  onMerge,
+}: {
+  state: State;
+  filter: GroupFilter;
+  handedOver: ReadonlySet<string>;
+  onMerge: (groupKey: string) => void;
+}) {
   if (state.status === 'idle') return null;
   if (state.status === 'loading') {
     return (
@@ -187,6 +224,7 @@ function Result({ state, filter }: { state: State; filter: GroupFilter }) {
             <tr>
               <th>Grund</th>
               <th>Personen</th>
+              <th>Bearbeiten</th>
             </tr>
           </thead>
           <tbody>
@@ -203,6 +241,14 @@ function Result({ state, filter }: { state: State; filter: GroupFilter }) {
                       </li>
                     ))}
                   </ul>
+                </td>
+                <td>
+                  <div class="row-actions">
+                    <button type="button" class="secondary" onClick={() => onMerge(group.key)}>
+                      Duplikat zusammenführen …
+                    </button>
+                    {handedOver.has(group.key) && <span class="badge">weitergegeben</span>}
+                  </div>
                 </td>
               </tr>
             ))}

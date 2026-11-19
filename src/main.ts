@@ -23,7 +23,7 @@ const modules: PowerToolsModule[] = [
   createHelloModule(api, logger),
   createAppointmentsModule(api, logger),
   createFollowUpsModule(api, logger),
-  createDuplicatesModule(api),
+  createDuplicatesModule(api, logger),
 ];
 
 const app = mountApp({ version: __APP_VERSION__, modules });
