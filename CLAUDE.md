@@ -137,7 +137,7 @@ docs/
 | 0 | Setup, Hello-World-Panel, CLAUDE.md | fertig, auf der Instanz getestet (2026-11-19) |
 | 1 | Nur lesen: API-Client, whoami, Kalender, Termine als Tabelle | gebaut; Termine laden auf der Instanz funktioniert (2026-11-19), Uhrzeiten und ganztägige Termine bestätigt, Serien-Markierung an einer wöchentlichen Testserie bestätigt |
 | 2 | Auswahl: Filter, Checkboxen, Serien markiert | fertig, auf der Instanz getestet (2026-11-19) |
-| 3 | Löschen gemäß Sicherheitsregeln, Protokoll, Export, Rückgängig | gebaut (Einzeltermine und ganze Serien), Test auf der Instanz durch Julian offen; einzelne Serien-Vorkommen folgen als eigener Schritt |
+| 3 | Löschen gemäß Sicherheitsregeln, Protokoll, Export, Rückgängig | gebaut (Einzeltermine und ganze Serien). Auf der Instanz bestätigt (2026-11-19): Trockenlauf, echtes Löschen eines Einzeltermins, JSON-Export. Noch nicht auf der Instanz geprüft: Rückgängig, ganze Serie löschen, Abbrechen. Einzelne Serien-Vorkommen folgen als eigener Schritt |
 | 4 | GitHub Action, Release v0.1.0, README fertig | offen |
 
 ## Entscheidungen
@@ -162,10 +162,10 @@ docs/
 - `docs/openapi.json` ist ca. 40 MB groß: nie komplett lesen, sondern gezielt
   nach Pfaden und Schemas suchen (z. B. `/whoami`, `/csrftoken`,
   `/calendars`, `/calendars/{calendarId}/appointments`).
-- CSRF: Der Header-Name `csrf-token` steht **nicht** in der
-  OpenAPI-Spezifikation (nur `GET /csrftoken`). Der API-Client setzt ihn bei
-  schreibenden Requests; ob das stimmt, zeigt der erste echte Löschtest
-  (alternativ in den DevTools an einem Request von ChurchTools ablesen).
+- CSRF: Der Header-Name `csrf-token` steht nicht in der
+  OpenAPI-Spezifikation (nur `GET /csrftoken`). Ein echtes `DELETE` mit
+  diesem Header war auf der Instanz erfolgreich (2026-11-19); für `POST`
+  (Wiederherstellen) steht die Bestätigung noch aus.
 - Einzelne Vorkommen einer Serie löschen: vorher an einer Testserie mit Ort
   und Raumbuchung prüfen, was `PUT` mit nicht mitgeschickten Feldern macht.
 - Wiederherstellen ist noch nicht auf der Instanz geprüft (u. a. ob
