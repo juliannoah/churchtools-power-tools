@@ -24,3 +24,7 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Termine filtern (Titel, Einzeltermine/Serien) und per Checkbox auswählen,
   auch alle angezeigten auf einmal. Die Auswahl zeigt, wie viele Vorkommen
   aus Serien stammen und wie viele der Filter gerade ausblendet.
+- Termine lassen sich über alle Kalender auf einmal laden; die Tabelle zeigt
+  dann zusätzlich den Kalender.
+- Das Panel lässt sich ein- und ausklappen, ohne dass geladene Termine,
+  Filter oder Auswahl verloren gehen.

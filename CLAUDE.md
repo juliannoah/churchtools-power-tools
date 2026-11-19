@@ -141,7 +141,8 @@ docs/
 | 2026-11-19 | Startknopf unten rechts **und** Menü-Eintrag im Userscript-Manager (`GM_registerMenuCommand`, einziger Grant). |
 | 2026-11-19 | Der Instanzname steht nicht im Repo (öffentlich, läuft auf jeder Instanz). |
 | 2026-11-19 | Lizenz **MIT**, Copyright-Vermerk mit dem GitHub-Handle `juliannoah` (kein Klarname). |
-| 2026-11-19 | Termine werden **pro Kalender** geladen (`/calendars/{calendarId}/appointments`), Zeitraum höchstens 366 Tage, Vorbelegung heute + 90 Tage. |
+| 2026-11-19 | Termine werden pro Kalender (`/calendars/{calendarId}/appointments`) oder über **alle Kalender** (`/calendars/appointments?calendar_ids[]=…`) geladen; Zeitraum höchstens 366 Tage, Vorbelegung heute + 90 Tage. Jede Zeile kennt ihre `calendarId` (für das Löschen nötig). |
+| 2026-11-19 | Das Panel wird **ein-/ausgeklappt statt geschlossen**: Es bleibt nach dem ersten Öffnen im DOM (`hidden`), damit geladene Termine, Filter und Auswahl erhalten bleiben. |
 | 2026-11-19 | Uhrzeiten werden in der Zeitzone des Browsers angezeigt (Annahme: entspricht der Zeitzone der Installation). |
 
 ## Offene Punkte
