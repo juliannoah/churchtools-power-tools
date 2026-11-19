@@ -164,6 +164,40 @@ docs/
 | 2026-11-19 | Das Panel wird **ein-/ausgeklappt statt geschlossen**: Es bleibt nach dem ersten Öffnen im DOM (`hidden`), damit geladene Termine, Filter und Auswahl erhalten bleiben. |
 | 2026-11-19 | Uhrzeiten werden in der Zeitzone des Browsers angezeigt (Annahme: entspricht der Zeitzone der Installation). |
 
+## Offene Tests auf der Instanz
+
+Stand 2026-11-19, nach Release v0.1.0. Nur im Testkalender testen. Erledigte
+Punkte hier streichen und das Ergebnis in der Phasen-Tabelle bzw. unter
+„Entscheidungen“ festhalten.
+
+1. **Installation über den Release-Link:** lokal installiertes Skript
+   entfernen, über `releases/latest/download/…user.js` installieren, im Panel
+   steht „v0.1.0“.
+2. **Automatisches Update:** erst mit einem zweiten Release prüfbar (über den
+   Release-Link installiert, neues Release, „Nach Updates suchen“ → neue
+   Versionsnummer im Panel).
+3. **Wiederhergestellte Serie im Kalender:** Stehen die Vorkommen nach
+   „Rückgängig“ wieder an denselben Tagen? (Bisher belegt nur das Protokoll,
+   dass ChurchTools das Anlegen angenommen hat.)
+4. **Wiederherstellen mit mehr Daten:** Termin mit Ort, Link, Tags, im Namen
+   einer anderen Person (`onBehalfOfPid`) sowie eine Serie mit Ausnahme- und
+   Zusatztagen löschen und wiederherstellen. Zusätzlich ein Termin mit
+   Raumbuchung: Die Buchung darf laut Hinweis fehlen, der Termin muss
+   zurückkommen.
+5. **„Alle Kalender“:** Anzahl, Spalte „Kalender“ und Dauer der Abfrage.
+6. **Ein-/Ausklappen:** Tabelle, Filter und Auswahl bleiben erhalten; auch
+   beim Wechsel zwischen den Reitern.
+7. **Fehlerfälle:** abgemeldet (401-Hinweis), Termin ohne Löschrecht (steht
+   unter „Fehlgeschlagen“ mit Grund, Rest läuft weiter).
+8. **CSV-Export in Excel:** Umlaute und Spalten korrekt (bisher nur JSON
+   geprüft).
+9. **Protokoll-Download im Reiter „Start“:** Zähler läuft mit, beide Formate.
+10. **Navigation:** Bleibt der Knopf bei jedem Bereichswechsel in ChurchTools
+    genau einmal sichtbar (Frage `history.pushState`, siehe unten)?
+11. **Vor dem Bau von „einzelnes Serien-Vorkommen löschen“:** an einer
+    Testserie mit Ort und Raumbuchung prüfen, was `PUT` mit nicht
+    mitgeschickten Feldern macht.
+
 ## Offene Punkte
 
 - `docs/openapi.json` ist ca. 40 MB groß: nie komplett lesen, sondern gezielt
