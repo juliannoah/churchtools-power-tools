@@ -56,7 +56,8 @@ src/
     api-client.ts       fetch-Wrapper: Session, CSRF, Fehler (ApiError), Retry, Throttling
     logger.ts           Protokoll der Aktionen (im Arbeitsspeicher), Export als CSV/JSON
     ui/                 gemeinsame UI-Bausteine (mount, App/Panel, später Tabelle, Dialoge)
-  api/                  whoami.ts, calendars.ts, appointments.ts, types.ts
+  api/                  whoami.ts, calendars.ts, appointments.ts, followups.ts,
+                        persons.ts, groups.ts, types.ts
   features/
     hello/              Reiter „Start“: Instanz, angemeldete Person, Route
     bulk-delete-appointments/   Reiter „Termine“
@@ -68,6 +69,8 @@ src/
       snapshot.ts       Termindaten zum Neuanlegen festhalten
       restore.ts        Wiederherstellen (Neuanlegen) gelöschter Termine (ohne DOM)
       restore-view.tsx  Oberfläche zum Wiederherstellen
+    followups/          Reiter „Followups“: index.tsx, view.tsx, logic.ts
+                        (Stufe A nur lesen, siehe „Modul Followups“)
 docs/
   openapi.json          OpenAPI-Spezifikation der Instanz (nicht eingecheckt, Bezug: docs/README.md)
 ```
@@ -114,10 +117,60 @@ docs/
 5. Abbrechen-Button während des Löschvorgangs, Fortschrittsanzeige,
    Zusammenfassung am Ende (erfolgreich / fehlgeschlagen mit Grund).
 
+## Modul Followups (selbstregistrierte Nutzer)
+
+Ziel: Die Bearbeitung der Followups zu selbstregistrierten Personen
+vereinfachen. Ob es ein Duplikat ist, **entscheidet immer der Mensch** – das
+Skript schlägt nur vor und führt die Schritte nach Bestätigung aus.
+
+Ablauf laut Julian (2026-11-19):
+
+1. Prüfen, ob die Person schon existiert (Name und E-Mail).
+2. **Duplikat:**
+   - Im bestehenden (nicht selbstregistrierten) Nutzer die Beziehung
+     „Duplikat hinzufügen“ zur neuen Person anlegen
+     (`POST /persons/{personId}/relationships`, Typ aus
+     `GET /person/relationshiptypes` – ID nicht fest einbauen).
+   - Beide Personen in die Gruppe „Duplikate“ aufnehmen
+     (`PUT /groups/{groupId}/members/{personId}`). Die Gruppe wird per Name
+     gesucht und mit ID zur Bestätigung angezeigt, nicht fest eingebaut.
+   - Followup um **7 Tage** verschieben (`POST /followups/{id}/postpone`)
+     und die Notiz „Duplikat erstellen und zur Zusammenführung weitergegeben“
+     anlegen (`POST /followups/{id}/notes`). Es bleibt offen.
+3. **Kein Duplikat:** Followup als erledigt markieren
+   (`POST /followups/{id}/complete`) und die Person auf Wunsch in eine
+   Gemeindegruppe aufnehmen. Üblich sind die Gruppen „Gemeindeliste (<Ort>)“.
+
+Stufen:
+
+| Stufe | Inhalt | Stand |
+|---|---|---|
+| A | Nur lesen: offene Followups, Person, mögliche Dubletten (gleiche E-Mail oder exakt gleicher Vor- und Nachname) | gebaut, Test auf der Instanz durch Julian offen |
+| B | Bearbeiten: „Duplikat von …“ / „Kein Duplikat“ mit Vorschau, Protokoll | offen |
+
+Regeln für Stufe B:
+
+- Vor jeder Änderung eine Vorschau, was mit welcher Person-ID geschieht;
+  erster Versuch nur mit zwei Testpersonen.
+- Richtung der Beziehung (wer ist „Original“, wer „Duplikat“) in der Vorschau
+  anzeigen und am ersten Test in ChurchTools prüfen, nicht annehmen.
+- **Protokoll nur mit IDs** (Person, Followup, Gruppe) – keine Namen und
+  E-Mail-Adressen. Das ist aus Datenschutzgründen verbindlich.
+- Mehrere Schreibschritte pro Followup: Bricht einer ab, klar anzeigen, was
+  schon geschehen ist und was nicht; nichts stillschweigend wiederholen.
+
+Noch offen: Woran erkennt man die Followups der Selbstregistrierten
+(Titel/Gruppe)? Bis dahin zeigt der Reiter alle offenen Followups mit
+Textfilter.
+
 ## Datenschutz
 
 - **Keine echten Personendaten** in Tests, Fixtures, Commits, Logs im Repo
   oder Beispielen – ausschließlich erfundene Mock-Daten.
+- Screenshots und Exporte aus ChurchTools können echte Namen enthalten:
+  nichts daraus in Code, Tests, Doku oder Commit-Nachrichten übernehmen.
+- Instanzspezifisches (Gruppen-IDs, Namen der Organisation, Support-Links)
+  gehört nicht ins öffentliche Repo.
 - Keine Daten an externe Dienste. Das Skript kommuniziert nur mit der
   ChurchTools-Instanz, auf der es läuft.
 - `.gitignore` deckt `.env`, lokale Exporte und Protokolle ab; exportierte
