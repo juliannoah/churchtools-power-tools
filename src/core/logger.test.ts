@@ -42,7 +42,7 @@ describe('Protokoll', () => {
 
     expect(header?.startsWith('﻿"Zeitpunkt";"Modus";"Ergebnis"')).toBe(true);
     expect(line).toBe(
-      '"2026-01-02T03:04:05.000Z";"Echt";"gelöscht";"";"10";"3";"Testkalender";"Probe ""Testchor""; Saal";"";"Einzeltermin";"So., 01.03.2026, ganztägig"',
+      '"2026-01-02T03:04:05.000Z";"Echt";"gelöscht";"";"10";"3";"Testkalender";"Probe ""Testchor""; Saal";"";"Einzeltermin";"So., 01.03.2026, ganztägig";"";"";"";"";""',
     );
     expect(rest).toBe('');
   });
@@ -52,6 +52,24 @@ describe('Protokoll', () => {
 
     expect(csv).toContain(`"'=SUMME(A1:A9)"`);
     expect(csv).toContain('"Trockenlauf";"Trockenlauf – nicht gelöscht"');
+  });
+
+  it('schreibt Einträge zu Personen nur mit IDs', () => {
+    const line = toCsv([
+      {
+        timestamp: '2026-01-02T03:04:05.000Z',
+        dryRun: false,
+        result: 'done',
+        detail: '',
+        action: 'Followup: Duplikat: Person #900 in Gruppe #7 aufnehmen',
+        personId: 900,
+        groupId: 7,
+      },
+    ]).split('\r\n')[1];
+
+    expect(line).toBe(
+      '"2026-01-02T03:04:05.000Z";"Echt";"ausgeführt";"";"";"";"";"";"";"";"";"Followup: Duplikat: Person #900 in Gruppe #7 aufnehmen";"900";"";"";"7"',
+    );
   });
 
   it('exportiert JSON, das sich wieder einlesen lässt', () => {

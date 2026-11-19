@@ -451,6 +451,38 @@ dl.facts dd {
   font-family: ui-monospace, Consolas, monospace;
 }
 
+.row-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row-actions button {
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+ol.steps {
+  margin: 0 0 12px;
+  padding-left: 24px;
+}
+
+ol.steps li + li {
+  margin-top: 6px;
+}
+
+input.short {
+  width: 7em;
+}
+
+.group-picker p {
+  margin-bottom: 12px;
+}
+
+.group-picker .toolbar {
+  margin-bottom: 4px;
+}
+
 ul.candidates {
   margin: 0;
   padding: 0;

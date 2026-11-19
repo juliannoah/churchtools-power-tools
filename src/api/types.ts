@@ -185,3 +185,23 @@ export interface ApiPagedList<T> {
   data: T[];
   meta: { pagination: { current: number; lastPage: number; total?: number } };
 }
+
+/**
+ * GET /person/relationshiptypes – ein Beziehungstyp mit zwei Seiten (z. B.
+ * „Original“ und „Duplikat“). Gleiche Bezeichnungen = ungerichtet.
+ */
+export interface RelationshipType {
+  id: number;
+  nameTranslated: string;
+  degreeNameATranslated: string;
+  degreeNameBTranslated: string;
+}
+
+/** Eine Beziehung aus Sicht der abgefragten Person. */
+export interface Relationship {
+  id: number;
+  relationshipTypeId: number;
+  /** Was die andere Person (`relative`) für die abgefragte Person ist. */
+  degreeOfRelationship: string;
+  relative: { domainIdentifier: string };
+}

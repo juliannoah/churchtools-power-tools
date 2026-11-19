@@ -11,7 +11,10 @@ export type LogResult =
   | 'failed'
   | 'not-run'
   | 'restored'
-  | 'restore-failed';
+  | 'restore-failed'
+  | 'done'
+  | 'would-do'
+  | 'skipped';
 
 export const LOG_RESULT_LABEL: Record<LogResult, string> = {
   deleted: 'gelöscht',
@@ -20,6 +23,9 @@ export const LOG_RESULT_LABEL: Record<LogResult, string> = {
   'not-run': 'nicht ausgeführt',
   restored: 'wiederhergestellt (neu angelegt)',
   'restore-failed': 'Wiederherstellen fehlgeschlagen',
+  done: 'ausgeführt',
+  'would-do': 'Trockenlauf – nicht ausgeführt',
+  skipped: 'übersprungen (bereits erledigt)',
 };
 
 export interface LogEntry {
@@ -30,15 +36,26 @@ export interface LogEntry {
   result: LogResult;
   /** Grund bei Fehlern bzw. Zusatzinformation. */
   detail: string;
-  appointmentId: number;
-  calendarId: number;
-  calendar: string;
-  title: string;
-  subtitle: string;
+
+  // Einträge zu Terminen
+  appointmentId?: number;
+  calendarId?: number;
+  calendar?: string;
+  title?: string;
+  subtitle?: string;
   /** „Einzeltermin“ oder „ganze Serie“ samt Wiederholung. */
-  kind: string;
+  kind?: string;
   /** Datum/Uhrzeit des Termins bzw. der ausgewählten Vorkommen. */
-  date: string;
+  date?: string;
+
+  // Einträge zu Personen und Followups: aus Datenschutzgründen NUR IDs,
+  // keine Namen oder E-Mail-Adressen.
+  /** Was getan wurde bzw. würde – ohne Personendaten. */
+  action?: string;
+  personId?: number;
+  otherPersonId?: number;
+  followUpId?: number;
+  groupId?: number;
   /**
    * Vollständige Termindaten zum Neuanlegen (nur im JSON-Export, nicht in
    * der CSV-Datei).
@@ -80,14 +97,23 @@ const CSV_COLUMNS: readonly (readonly [string, (entry: LogEntry) => string])[] =
   ['Modus', (e) => (e.dryRun ? 'Trockenlauf' : 'Echt')],
   ['Ergebnis', (e) => LOG_RESULT_LABEL[e.result]],
   ['Grund', (e) => e.detail],
-  ['Termin-ID', (e) => String(e.appointmentId)],
-  ['Kalender-ID', (e) => String(e.calendarId)],
-  ['Kalender', (e) => e.calendar],
-  ['Titel', (e) => e.title],
-  ['Untertitel', (e) => e.subtitle],
-  ['Art', (e) => e.kind],
-  ['Datum', (e) => e.date],
+  ['Termin-ID', (e) => text(e.appointmentId)],
+  ['Kalender-ID', (e) => text(e.calendarId)],
+  ['Kalender', (e) => text(e.calendar)],
+  ['Titel', (e) => text(e.title)],
+  ['Untertitel', (e) => text(e.subtitle)],
+  ['Art', (e) => text(e.kind)],
+  ['Datum', (e) => text(e.date)],
+  ['Aktion', (e) => text(e.action)],
+  ['Personen-ID', (e) => text(e.personId)],
+  ['Zweite Personen-ID', (e) => text(e.otherPersonId)],
+  ['Followup-ID', (e) => text(e.followUpId)],
+  ['Gruppen-ID', (e) => text(e.groupId)],
 ];
+
+function text(value: string | number | undefined): string {
+  return value === undefined ? '' : String(value);
+}
 
 /** CSV mit Semikolon und BOM, damit Excel (deutsch) es direkt öffnet. */
 export function toCsv(entries: readonly LogEntry[]): string {

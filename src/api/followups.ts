@@ -25,3 +25,33 @@ export async function listOpenFollowUps(api: ApiClient, signal?: AbortSignal): P
   // Zur Sicherheit: nur wirklich offene.
   return all.filter((followUp) => followUp.doneDate === null);
 }
+
+/**
+ * Verschiebt die Fälligkeit; das Followup bleibt offen. Das Datum muss nach
+ * heute liegen (`YYYY-MM-DD`).
+ */
+export async function postponeFollowUp(
+  api: ApiClient,
+  followUpId: number,
+  dueDate: string,
+): Promise<void> {
+  await api.post(`/followups/${followUpId}/postpone`, { body: { dueDate } });
+}
+
+/** Legt eine Notiz am Followup an (Verfasser ist die angemeldete Person). */
+export async function addFollowUpNote(
+  api: ApiClient,
+  followUpId: number,
+  comment: string,
+): Promise<void> {
+  await api.post(`/followups/${followUpId}/notes`, { body: { comment } });
+}
+
+/**
+ * Markiert das Followup als erledigt. Bewusst ohne Zielgruppe: Die Aufnahme
+ * in eine Gruppe läuft als eigener Schritt, damit keine bestehende
+ * Mitgliedschaft überschrieben wird.
+ */
+export async function completeFollowUp(api: ApiClient, followUpId: number): Promise<void> {
+  await api.post(`/followups/${followUpId}/complete`, { body: {} });
+}
