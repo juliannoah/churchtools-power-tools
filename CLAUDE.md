@@ -140,6 +140,7 @@ docs/
 | 2026-11-19 | UI mit **Preact** statt Vanilla TS: Tabelle, Filter, Auswahl und Fortschritt sind zustandslastig; Preact kostet nur wenige KB. |
 | 2026-11-19 | Startknopf unten rechts **und** Menü-Eintrag im Userscript-Manager (`GM_registerMenuCommand`, einziger Grant). |
 | 2026-11-19 | Der Instanzname steht nicht im Repo (öffentlich, läuft auf jeder Instanz). |
+| 2026-11-19 | Lizenz **MIT**, Copyright-Vermerk mit dem GitHub-Handle `juliannoah` (kein Klarname). |
 | 2026-11-19 | Termine werden **pro Kalender** geladen (`/calendars/{calendarId}/appointments`), Zeitraum höchstens 366 Tage, Vorbelegung heute + 90 Tage. |
 | 2026-11-19 | Uhrzeiten werden in der Zeitzone des Browsers angezeigt (Annahme: entspricht der Zeitzone der Installation). |
 
@@ -148,8 +149,6 @@ docs/
 - `docs/openapi.json` ist ca. 40 MB groß: nie komplett lesen, sondern gezielt
   nach Pfaden und Schemas suchen (z. B. `/whoami`, `/csrftoken`,
   `/calendars`, `/calendars/{calendarId}/appointments`).
-- Lizenz: MIT ist entschieden; `LICENSE` fehlt noch, weil der Name des
-  Urhebers für den Copyright-Vermerk offen ist.
 - CSRF: Der Header-Name `csrf-token` steht **nicht** in der
   OpenAPI-Spezifikation (nur `GET /csrftoken`). Der API-Client setzt ihn bei
   schreibenden Requests; vor Phase 3 an einem echten Request von ChurchTools

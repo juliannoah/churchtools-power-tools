@@ -34,3 +34,7 @@ npm run preview  # liefert das gebaute Skript lokal zur Installation aus
 Zum Ausprobieren das gebaute Skript im Userscript-Manager installieren und
 eine ChurchTools-Instanz (`https://<name>.church.tools`) öffnen. Unten rechts
 erscheint der Knopf „Power-Tools“.
+
+## Lizenz
+
+[MIT](LICENSE)
