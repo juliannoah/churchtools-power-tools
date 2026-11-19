@@ -153,7 +153,7 @@ Stufen:
 | Stufe | Inhalt | Stand |
 |---|---|---|
 | A | Nur lesen: offene Followups, Person, mögliche Dubletten (gleiche E-Mail oder exakt gleicher Vor- und Nachname), Filter nach Personenstatus, Einzelprüfung per Personen-ID | gebaut. Auf der Instanz bestätigt (2026-11-19): Followups, Personen und Gruppe werden geladen. Offen: Dublettenerkennung an einem echten Fall (über die Einzelprüfung), Statusfilter |
-| B | Bearbeiten: „Duplikat …“ / „Kein Duplikat …“ je Followup mit Vorschau der Schritte, Trockenlauf als Vorgabe, Protokoll nur mit IDs | gebaut (`actions.ts`, `action-view.tsx`). Auf der Instanz bisher nur der Trockenlauf „Kein Duplikat“ (2026-11-19, Gruppensuche und Schritte stimmen); **echte Ausführung noch nicht gelaufen** – erster echter Lauf nur mit zwei Testpersonen |
+| B | Bearbeiten: „Duplikat …“ / „Kein Duplikat …“ je Followup mit Vorschau der Schritte, Trockenlauf als Vorgabe, Protokoll nur mit IDs | gebaut (`actions.ts`, `action-view.tsx`). Auf der Instanz bisher nur Trockenläufe „Kein Duplikat“ (2026-11-19: mit vorgeschlagener Gruppe, mit gesuchter Gruppe und ohne Gruppe – Schritte stimmen); **echte Ausführung noch nicht gelaufen** – erster echter Lauf nur mit zwei Testpersonen |
 | C | Allgemeine Dublettensuche über alle sichtbaren Personen (Wunsch vom 2026-11-19): Personen seitenweise laden, lokal nach gleichem Namen bzw. gleicher E-Mail gruppieren; Alternative `GET /persons/duplicates` (Beta, Rechte ungeklärt). Aktionen wie in Stufe B. | Suche gebaut (Reiter „Dubletten“, nur lesen, eigene Gruppierung im Browser). Auf der Instanz gelaufen (2026-11-19): gut 1000 Personen, 5 Gruppen, ca. 8 Sekunden. Offen: ob alle erwarteten Personen dabei sind (Sichtbarkeit, Archiv); Aktionen folgen mit Stufe B |
 
 So ist Stufe B umgesetzt:
