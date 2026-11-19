@@ -1,5 +1,8 @@
 import type { ApiClient } from '../core/api-client';
-import type { ApiList, AppointmentOccurrence } from './types';
+import type { ApiList, AppointmentCreate, AppointmentOccurrence } from './types';
+
+/** Tags werden mitgeladen, damit sie beim Wiederherstellen erhalten bleiben. */
+const APPOINTMENT_INCLUDES = ['tags'] as const;
 
 export interface AppointmentRange {
   /** Erster Tag, `YYYY-MM-DD` (Zeitzone der Installation). */
@@ -20,9 +23,22 @@ export async function listAppointments(
 ): Promise<AppointmentOccurrence[]> {
   const result = await api.get<ApiList<AppointmentOccurrence>>(
     `/calendars/${calendarId}/appointments`,
-    { query: { from: range.from, to: range.to }, signal },
+    { query: { from: range.from, to: range.to, 'include[]': APPOINTMENT_INCLUDES }, signal },
   );
   return result.data;
+}
+
+/**
+ * Löscht den gespeicherten Termin. ACHTUNG: Bei einer Terminserie ist das
+ * die ganze Serie mit allen Vorkommen – ein einzelnes Vorkommen lässt sich
+ * über diesen Endpunkt nicht löschen. Antwort: 204 ohne Inhalt.
+ */
+export async function deleteAppointment(
+  api: ApiClient,
+  calendarId: number,
+  appointmentId: number,
+): Promise<void> {
+  await api.delete(`/calendars/${calendarId}/appointments/${appointmentId}`);
 }
 
 /**
@@ -36,8 +52,29 @@ export async function listAppointmentsOfCalendars(
   signal?: AbortSignal,
 ): Promise<AppointmentOccurrence[]> {
   const result = await api.get<ApiList<AppointmentOccurrence>>('/calendars/appointments', {
-    query: { 'calendar_ids[]': calendarIds, from: range.from, to: range.to },
+    query: {
+      'calendar_ids[]': calendarIds,
+      from: range.from,
+      to: range.to,
+      'include[]': APPOINTMENT_INCLUDES,
+    },
     signal,
   });
   return result.data;
+}
+
+/**
+ * Legt einen Termin (oder eine Serie) neu an und liefert dessen neue ID.
+ * Dient dem Wiederherstellen gelöschter Termine.
+ */
+export async function createAppointment(
+  api: ApiClient,
+  calendarId: number,
+  body: AppointmentCreate,
+): Promise<number> {
+  const result = await api.post<{ data: { id: number } }>(
+    `/calendars/${calendarId}/appointments`,
+    { body },
+  );
+  return result.data.id;
 }

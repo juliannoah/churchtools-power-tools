@@ -53,8 +53,57 @@ export interface AppointmentBase {
   isInternal: boolean;
   repeatId: RepeatId;
   repeatFrequency: number | null;
+  /** Bei `repeatId` 32: der wievielte Wochentag im Monat (6 = letzter). */
+  repeatOption: number | null;
   repeatUntil: string | null;
+  /** Zusätzliche Tage der Serie. */
+  additionals: { date: string; isRepeated: boolean }[];
+  /** Ausgenommene Tage der Serie. */
+  exceptions: { date: string }[];
+  link: string | null;
+  address: AppointmentAddress | null;
+  onBehalfOfPid: number | null;
   calendar: Calendar;
+}
+
+/** Ort eines Termins – die Felder, die beim Anlegen angenommen werden. */
+export interface AppointmentAddress {
+  name?: string | null;
+  street?: string | null;
+  addition?: string | null;
+  zip?: string | null;
+  city?: string | null;
+  district?: string | null;
+  country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+/**
+ * Body von POST /calendars/{calendarId}/appointments – nur die Felder, die
+ * das Skript beim Wiederherstellen setzt. Ganztägig ergibt sich aus dem
+ * Datumsformat (`YYYY-MM-DD`).
+ */
+export interface AppointmentCreate {
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  link: string | null;
+  isInternal: boolean;
+  startDate: string;
+  endDate: string;
+  repeatId: RepeatId;
+  repeatFrequency: number | null;
+  repeatOption: number | null;
+  repeatUntil: string | null;
+  additionals: { date: string; isRepeated: boolean }[];
+  exceptions: { date: string }[];
+  address?: AppointmentAddress;
+  onBehalfOfPid: number | null;
+  /** IDs der Tags. */
+  tags: number[];
+  /** Keine Info-Mail an den Eigentümer. */
+  informOwner: false;
 }
 
 /** Berechnete Daten eines einzelnen Vorkommens. */
@@ -75,4 +124,6 @@ export interface AppointmentOccurrence {
     base: AppointmentBase;
     calculated: AppointmentCalculated;
   };
+  /** Nur mit `include[]=tags`. */
+  tags?: { id: number; name: string }[];
 }

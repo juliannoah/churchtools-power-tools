@@ -1,4 +1,5 @@
-import type { AppointmentBase, AppointmentOccurrence } from '../../api/types';
+import type { AppointmentBase, AppointmentCreate, AppointmentOccurrence } from '../../api/types';
+import { toSnapshot } from './snapshot';
 
 /** Eine Zeile der Termin-Tabelle: genau ein Vorkommen. */
 export interface AppointmentRow {
@@ -19,6 +20,8 @@ export interface AppointmentRow {
   isSeries: boolean;
   /** Beschreibung der Wiederholung, leer bei Einzelterminen. */
   repeatLabel: string;
+  /** Daten, um den gespeicherten Termin nach dem Löschen neu anzulegen. */
+  snapshot: AppointmentCreate;
 }
 
 export interface DateRange {
@@ -58,19 +61,23 @@ export function validateRange(range: DateRange): string | null {
 /** Wandelt die API-Antwort in Tabellenzeilen um, sortiert nach Beginn. */
 export function toRows(occurrences: readonly AppointmentOccurrence[]): AppointmentRow[] {
   return occurrences
-    .map(({ appointment: { base, calculated } }): AppointmentRow => ({
-      key: `${base.id}@${calculated.startDate}`,
-      appointmentId: base.id,
-      title: base.title,
-      subtitle: base.subtitle,
-      calendarId: base.calendar.id,
-      calendarName: base.calendar.nameTranslated || base.calendar.name,
-      allDay: base.allDay,
-      start: calculated.startDate,
-      end: calculated.endDate,
-      isSeries: base.repeatId !== 0,
-      repeatLabel: describeRepeat(base),
-    }))
+    .map((occurrence): AppointmentRow => {
+      const { base, calculated } = occurrence.appointment;
+      return {
+        key: `${base.id}@${calculated.startDate}`,
+        appointmentId: base.id,
+        title: base.title,
+        subtitle: base.subtitle,
+        calendarId: base.calendar.id,
+        calendarName: base.calendar.nameTranslated || base.calendar.name,
+        allDay: base.allDay,
+        start: calculated.startDate,
+        end: calculated.endDate,
+        isSeries: base.repeatId !== 0,
+        repeatLabel: describeRepeat(base),
+        snapshot: toSnapshot(occurrence),
+      };
+    })
     .sort((a, b) => sortValue(a) - sortValue(b) || a.title.localeCompare(b.title, 'de'));
 }
 

@@ -32,7 +32,13 @@ function occurrence(
         isInternal: false,
         repeatId: 0,
         repeatFrequency: null,
+        repeatOption: null,
         repeatUntil: null,
+        additionals: [],
+        exceptions: [],
+        link: null,
+        address: null,
+        onBehalfOfPid: null,
         calendar: {
           id: 3,
           name: 'Testkalender',
