@@ -1,0 +1,23 @@
+# Abhängigkeiten und Build-Ausgabe
+node_modules/
+dist/
+
+# Secrets und lokale Konfiguration
+.env
+.env.*
+
+# Lokale Exporte und Protokolle (können echte Termin-/Personendaten enthalten)
+exports/
+export/
+protokolle/
+logs/
+*.log
+ct-power-tools-*.csv
+ct-power-tools-*.json
+
+# Editor / Betriebssystem
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
