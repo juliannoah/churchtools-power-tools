@@ -149,8 +149,25 @@ Stufen:
 | Stufe | Inhalt | Stand |
 |---|---|---|
 | A | Nur lesen: offene Followups, Person, mögliche Dubletten (gleiche E-Mail oder exakt gleicher Vor- und Nachname), Filter nach Personenstatus, Einzelprüfung per Personen-ID | gebaut. Auf der Instanz bestätigt (2026-11-19): Followups, Personen und Gruppe werden geladen. Offen: Dublettenerkennung an einem echten Fall (über die Einzelprüfung), Statusfilter |
-| B | Bearbeiten: „Duplikat von …“ / „Kein Duplikat“ mit Vorschau, Protokoll | offen |
+| B | Bearbeiten: „Duplikat …“ / „Kein Duplikat …“ je Followup mit Vorschau der Schritte, Trockenlauf als Vorgabe, Protokoll nur mit IDs | gebaut (`actions.ts`, `action-view.tsx`), **auf der Instanz noch nicht ausgeführt** – erster echter Lauf nur mit zwei Testpersonen |
 | C | Allgemeine Dublettensuche über alle sichtbaren Personen (Wunsch vom 2026-11-19): Personen seitenweise laden, lokal nach gleichem Namen bzw. gleicher E-Mail gruppieren; Alternative `GET /persons/duplicates` (Beta, Rechte ungeklärt). Aktionen wie in Stufe B. | Suche gebaut (Reiter „Dubletten“, nur lesen, eigene Gruppierung im Browser). Auf der Instanz gelaufen (2026-11-19): gut 1000 Personen, 5 Gruppen, ca. 8 Sekunden. Offen: ob alle erwarteten Personen dabei sind (Sichtbarkeit, Archiv); Aktionen folgen mit Stufe B |
+
+So ist Stufe B umgesetzt:
+
+- Jeder Schritt prüft zuerst lesend, ob er schon erledigt ist (Beziehung
+  vorhanden, schon Mitglied) und wird dann übersprungen. Ein erneuter Lauf
+  nach einem Abbruch macht dort weiter.
+- Scheitert ein Schritt, wird angehalten; die übrigen werden als „nicht
+  ausgeführt“ protokolliert.
+- Beziehung: Angelegt wird vom Original aus. Nennt die Antwort die neue
+  Person nicht als „Duplikat“, wird die Beziehung gelöscht und von der
+  anderen Seite aus angelegt (`degreeOfRelationship` der Antwort).
+- Der Beziehungstyp wird an der Seitenbezeichnung „Duplikat“ erkannt; die
+  Gruppe „Duplikate“ wird per Namen gesucht oder per ID eingegeben und im
+  Browser gemerkt (`core/settings.ts`, nur IDs und Suchtexte).
+- „Kein Duplikat“: erst Aufnahme in die Gruppe (`only_add`), dann
+  `complete` ohne Zielgruppe – so wird keine bestehende Mitgliedschaft
+  überschrieben und das Followup bleibt offen, wenn die Aufnahme scheitert.
 
 Regeln für Stufe B:
 
@@ -223,6 +240,19 @@ Kürzel oder ID sind nicht fest eingebaut.
 | 2026-11-19 | Uhrzeiten werden in der Zeitzone des Browsers angezeigt (Annahme: entspricht der Zeitzone der Installation). |
 
 ## Offene Tests auf der Instanz
+
+Zu Followups/Dubletten (Stufe B), mit zwei Testpersonen gleichen, erfundenen
+Namens (eine davon selbstregistriert mit Followup):
+
+- Trockenlauf „Duplikat“: Werden Beziehungstyp und Gruppe „Duplikate“
+  gefunden, stimmen die fünf Schritte?
+- Echter Lauf „Duplikat“: Steht die Beziehung in ChurchTools richtig herum
+  (im bestehenden Nutzer: „Duplikat: <neue Person>“)? Sind beide in der
+  Gruppe, ist das Followup um 7 Tage verschoben, steht die Notiz?
+- Zweiter Lauf auf dasselbe Followup: Beziehung und Mitgliedschaften werden
+  übersprungen (Verschieben und Notiz laufen erneut – bewusst).
+- „Kein Duplikat“ mit Gemeindegruppe und ohne Gruppe.
+- Rechte: Reichen sie für Beziehungen, Gruppenaufnahme und Followup-Aktionen?
 
 Stand 2026-11-19, nach Release v0.1.0. Nur im Testkalender testen. Erledigte
 Punkte hier streichen und das Ergebnis in der Phasen-Tabelle bzw. unter

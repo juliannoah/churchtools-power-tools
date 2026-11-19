@@ -8,11 +8,17 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefügt
 
-- Neuer Reiter „Followups“ (nur lesen): zeigt die offenen Followups, die
-  betroffene Person und mögliche Dubletten (gleiche E-Mail-Adresse oder
-  gleicher Vor- und Nachname). Die Liste lässt sich auf einen Personenstatus
+- Neuer Reiter „Followups“: zeigt die offenen Followups, die betroffene
+  Person und mögliche Dubletten (gleiche E-Mail-Adresse oder gleicher Vor-
+  und Nachname). Die Liste lässt sich auf einen Personenstatus
   eingrenzen, und zu einer einzelnen Person lässt sich per ID gezielt nach
   Dubletten suchen.
+- Followups bearbeiten: „Duplikat“ legt die Beziehung zum bestehenden
+  Nutzer an, nimmt beide in die Gruppe für Duplikate auf, verschiebt das
+  Followup um 7 Tage und legt eine Notiz an. „Kein Duplikat“ nimmt die Person
+  auf Wunsch in eine Gruppe auf und markiert das Followup als erledigt.
+  Vorab werden alle Schritte angezeigt; Standard ist ein Trockenlauf.
+- Das Protokoll enthält zu Personen und Followups nur IDs, keine Namen.
 - Neuer Reiter „Dubletten“ (nur lesen): prüft alle sichtbaren Personen auf
   gleichen Vor- und Nachnamen oder gleiche E-Mail-Adresse.
 
