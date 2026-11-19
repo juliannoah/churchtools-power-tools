@@ -2,9 +2,14 @@
 
 Ein Userscript für [Tampermonkey](https://www.tampermonkey.net/) und
 [Violentmonkey](https://violentmonkey.github.io/), das die Verwaltung in
-ChurchTools vereinfacht. Erste Funktion: **mehrere Termine auf einmal
-auswählen und löschen** – mit Vorschau, Bestätigung, Protokoll und
-„Rückgängig machen“.
+ChurchTools vereinfacht:
+
+- **Termine:** mehrere Termine auf einmal auswählen und löschen – mit
+  Vorschau, Bestätigung, Protokoll und „Rückgängig machen“.
+- **Followups:** offene Followups mit möglichen Dubletten der Person
+  anzeigen und in wenigen Klicks bearbeiten.
+- **Dubletten:** alle sichtbaren Personen auf mögliche Dubletten prüfen und
+  zur Zusammenführung weitergeben.
 
 Dies ist ein privates Projekt und steht in keiner Verbindung zum Hersteller
 von ChurchTools.
@@ -40,6 +45,36 @@ Das Skript läuft nur auf Adressen der Form `https://<name>.church.tools`.
 Mit „»“ oben rechts lässt sich das Fenster einklappen, ohne dass geladene
 Termine oder die Auswahl verloren gehen.
 
+## Followups bearbeiten
+
+Der Reiter **Followups** zeigt deine offenen Followups, die betroffene Person
+und mögliche Dubletten (gleiche E-Mail-Adresse oder gleicher Vor- und
+Nachname). Über „Personenstatus“ lässt sich die Liste z. B. auf
+selbstregistrierte Personen eingrenzen.
+
+- **„Duplikat …“:** Du wählst die bestehende Person. Das Skript trägt die
+  neue Person als deren Duplikat ein, nimmt beide in die Gruppe für Duplikate
+  auf, verschiebt das Followup um 7 Tage und legt eine Notiz an.
+- **„Kein Duplikat …“:** Du wählst auf Wunsch eine Gruppe (vorgeschlagen
+  werden Gruppen mit „Gemeindeliste“ im Namen). Das Skript nimmt die Person
+  dort auf und markiert das Followup als erledigt.
+
+Vor dem Ausführen siehst du jeden einzelnen Schritt. Ob es ein Duplikat ist,
+entscheidest immer du.
+
+## Dubletten suchen
+
+Der Reiter **Dubletten** prüft alle Personen, die du sehen darfst, auf exakt
+gleichen Vor- und Nachnamen oder gleiche E-Mail-Adresse. Ein Klick auf einen
+Namen öffnet die Person in einem neuen Tab. Über „Duplikat zusammenführen …“
+wählst du den Hauptaccount; die übrigen werden als dessen Duplikat eingetragen
+und alle in die Gruppe für Duplikate aufgenommen. Die Datensätze selbst führt
+das Skript **nicht** zusammen – das geschieht danach in ChurchTools.
+
+Gruppen mit nur gleicher E-Mail-Adresse sind oft Familien, die sich eine
+Adresse teilen, und keine Dubletten. Schreibvarianten eines Namens findet der
+exakte Vergleich nicht.
+
 ## Wichtig zu wissen
 
 - **Rechte:** Das Skript nutzt deine bestehende ChurchTools-Anmeldung im
@@ -52,8 +87,9 @@ Termine oder die Auswahl verloren gehen.
   nicht löschen; sie werden übersprungen. Eine Serie wird nur als Ganzes
   gelöscht – mit allen Vorkommen, auch außerhalb des geladenen Zeitraums –
   und nur, wenn du das in der Vorschau ausdrücklich anhakst.
-- **Protokoll:** Jede Löschung und jedes Wiederherstellen wird
-  protokolliert. Das Protokoll lässt sich als CSV oder JSON speichern
+- **Protokoll:** Jede Löschung, jedes Wiederherstellen und jeder Schritt bei
+  Followups und Dubletten wird protokolliert. Zu Personen enthält das
+  Protokoll nur IDs, keine Namen oder E-Mail-Adressen. Das Protokoll lässt sich als CSV oder JSON speichern
   (in der Zusammenfassung und im Reiter „Start“). Es liegt nur im
   Arbeitsspeicher und ist nach dem Neuladen der Seite weg – speichere es
   also, bevor du die Seite verlässt. Die Datei enthält Titel und Zeiten
