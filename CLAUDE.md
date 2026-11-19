@@ -143,6 +143,10 @@ Ablauf laut Julian (2026-11-19):
 3. **Kein Duplikat:** Followup als erledigt markieren
    (`POST /followups/{id}/complete`) und die Person auf Wunsch in eine
    Gemeindegruppe aufnehmen. Üblich sind die Gruppen „Gemeindeliste (<Ort>)“.
+   Entscheidung 2026-11-19: Als Vorschläge erscheinen auf **jeder** Instanz
+   die Gruppen mit „Gemeindeliste“ im Namen (allgemeine Vorgabe, kein
+   Instanzname im Code); ohne solche Gruppen erscheint nichts. Andere Gruppen
+   über die Suche.
 
 Stufen:
 

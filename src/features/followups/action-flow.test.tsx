@@ -159,12 +159,6 @@ describe('Followup bearbeiten', () => {
 
     expect(button('Trockenlauf starten').disabled).toBe(true);
 
-    const search = container.querySelector<HTMLInputElement>('.group-picker input[type=search]');
-    if (!search) throw new Error('Gruppensuche nicht gefunden');
-    search.value = 'Gemeindeliste';
-    search.dispatchEvent(new Event('input', { bubbles: true }));
-    await settle();
-    await click('Suchen');
     await chooseGroup();
 
     expect(text()).toContain('Person #900 in Gruppe #33 aufnehmen');
@@ -175,23 +169,15 @@ describe('Followup bearbeiten', () => {
     expect(post.mock.calls.map(([path]) => path)).toEqual(['/followups/5/complete']);
   });
 
-  it('zeigt gemerkte Gruppen beim nächsten Öffnen sofort als Vorschläge', async () => {
-    setup();
+  it('schlägt ohne jede Einrichtung die Gruppen mit „Gemeindeliste“ im Namen vor', async () => {
+    const { get } = setup();
     await click('Followups laden');
     await click('Kein Duplikat …');
-    expect(container.querySelector('.group-picker input[type=radio]')).toBeNull();
 
-    const search = container.querySelector<HTMLInputElement>('.group-picker input[type=search]');
-    if (!search) throw new Error('Gruppensuche nicht gefunden');
-    search.value = 'Gemeindeliste';
-    search.dispatchEvent(new Event('input', { bubbles: true }));
-    await settle();
-    await click('Suchen');
-    await click('Diese Treffer künftig als Vorschläge zeigen');
-    await click('Zurück');
-
-    await click('Kein Duplikat …');
-
+    expect(get).toHaveBeenCalledWith(
+      '/groups',
+      expect.objectContaining({ query: expect.objectContaining({ query: 'Gemeindeliste' }) }),
+    );
     expect(text()).toContain('Vorschläge Gemeindelisten:');
     expect(text()).toContain('Gemeindeliste (Testort) (#33)');
     // Vorschläge werden nur angeboten, nicht von selbst gewählt.

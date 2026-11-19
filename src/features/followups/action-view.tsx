@@ -26,6 +26,13 @@ import type { DuplicateCandidate, FollowUpRow } from './logic';
 
 export type ActionKind = 'duplicate' | 'not-duplicate';
 
+/**
+ * Vorgabe für die vorgeschlagenen Zielgruppen im Fall „kein Duplikat“. Gilt
+ * auf jeder Instanz: Gibt es dort keine Gruppen dieses Namens, erscheinen
+ * keine Vorschläge. Bewusst kein Instanzname im Code.
+ */
+const COMMUNITY_GROUP_QUERY = 'Gemeindeliste';
+
 interface FollowUpActionProps {
   api: ApiClient;
   logger: Logger;
@@ -332,6 +339,7 @@ export function FollowUpAction({
               if (group) setWithoutGroup(false);
             }}
             suggestionKey="followups:community-group-query"
+            defaultQuery={COMMUNITY_GROUP_QUERY}
             suggestionLabel="Vorschläge Gemeindelisten:"
           />
           <label class="check-line">
