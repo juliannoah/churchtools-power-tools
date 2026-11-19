@@ -1,4 +1,5 @@
 import type { FollowUp, Group, Person } from '../../api/types';
+import { emailsOf, nameKey, normalize, personName } from '../../core/persons';
 
 export type MatchReason = 'email' | 'name';
 
@@ -11,17 +12,6 @@ export const MATCH_REASON_LABEL: Record<MatchReason, string> = {
 export interface DuplicateCandidate {
   person: Person;
   reasons: MatchReason[];
-}
-
-/** Zum Vergleichen: ohne Groß-/Kleinschreibung und überflüssige Leerzeichen. */
-export function normalize(value: string | undefined): string {
-  return (value ?? '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('de');
-}
-
-/** Alle E-Mail-Adressen einer Person, normalisiert und ohne Doppelte. */
-export function emailsOf(person: Person): string[] {
-  const all = [person.email, ...(person.emails ?? []).map((entry) => entry.email)];
-  return [...new Set(all.map(normalize).filter((email) => email !== ''))];
 }
 
 /**
@@ -38,22 +28,14 @@ export function findDuplicateCandidates(
   searchResults: readonly Person[],
 ): DuplicateCandidate[] {
   const emails = new Set(emailsOf(person));
-  const firstName = normalize(person.firstName);
-  const lastName = normalize(person.lastName);
+  const name = nameKey(person);
   const candidates = new Map<number, DuplicateCandidate>();
 
   for (const other of searchResults) {
     if (other.id === person.id || candidates.has(other.id)) continue;
     const reasons: MatchReason[] = [];
     if (emailsOf(other).some((email) => emails.has(email))) reasons.push('email');
-    if (
-      firstName !== '' &&
-      lastName !== '' &&
-      normalize(other.firstName) === firstName &&
-      normalize(other.lastName) === lastName
-    ) {
-      reasons.push('name');
-    }
+    if (name !== '' && nameKey(other) === name) reasons.push('name');
     if (reasons.length > 0) candidates.set(other.id, { person: other, reasons });
   }
 
@@ -108,15 +90,4 @@ export function filterFollowUpRows(
       `${row.followUp.title} ${row.groupName} ${personName(row.person)}`,
     ).includes(needle);
   });
-}
-
-export function personName(person: Person | undefined): string {
-  if (!person) return '';
-  return [person.firstName, person.lastName].filter(Boolean).join(' ');
-}
-
-/** `YYYY-MM-DD` oder ISO-Zeitstempel als `TT.MM.JJJJ`; leer bei fehlendem Wert. */
-export function formatDate(value: string | null | undefined): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value ?? '');
-  return match ? `${match[3]}.${match[2]}.${match[1]}` : '';
 }

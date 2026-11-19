@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FollowUp, Person } from '../../api/types';
-import {
-  filterFollowUpRows,
-  findDuplicateCandidates,
-  formatDate,
-  toFollowUpRows,
-} from './logic';
+import { formatDate } from '../../core/persons';
+import { filterFollowUpRows, findDuplicateCandidates, toFollowUpRows } from './logic';
 
 // Ausschließlich erfundene Personen.
 const newPerson: Person = {

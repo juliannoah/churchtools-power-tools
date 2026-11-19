@@ -9,16 +9,15 @@ import {
 } from '../../api/persons';
 import type { Person, PersonStatus } from '../../api/types';
 import { type ApiClient, describeError, isAbortError } from '../../core/api-client';
+import { emailsOf, formatDate, statusLabel } from '../../core/persons';
+import { PersonInfo, type StatusMap } from '../../core/ui/PersonInfo';
 import {
   type DuplicateCandidate,
   type FollowUpFilter,
   type FollowUpRow,
   MATCH_REASON_LABEL,
-  emailsOf,
   filterFollowUpRows,
   findDuplicateCandidates,
-  formatDate,
-  personName,
   toFollowUpRows,
 } from './logic';
 
@@ -372,32 +371,6 @@ function PersonCheck({ api, statuses }: { api: ApiClient; statuses: PersonStatus
           </tbody>
         </table>
       )}
-    </>
-  );
-}
-
-type StatusMap = ReadonlyMap<number, PersonStatus>;
-
-function statusLabel(status: PersonStatus): string {
-  return status.shortyTranslated
-    ? `${status.shortyTranslated} – ${status.nameTranslated}`
-    : status.nameTranslated;
-}
-
-function PersonInfo({ person, statuses }: { person: Person; statuses: StatusMap }) {
-  const status = person.statusId === undefined ? undefined : statuses.get(person.statusId);
-  const details = [
-    status && `Status ${statusLabel(status)}`,
-    person.email,
-    person.birthday && `geb. ${formatDate(person.birthday)}`,
-    person.city,
-    person.meta?.createdDate && `angelegt ${formatDate(person.meta.createdDate)}`,
-    person.isArchived && 'archiviert',
-  ].filter(Boolean);
-  return (
-    <>
-      {personName(person) || '(ohne Namen)'} <span class="muted">· ID {person.id}</span>
-      {details.length > 0 && <div class="muted">{details.join(' · ')}</div>}
     </>
   );
 }
